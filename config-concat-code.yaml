@@ -216,6 +216,7 @@ project_only_filters:
   - "*.png"
   - "*.svg"
   - "*.woff2"
+  - ".woff"
   - "jquery-ui.min.css"
   - README.md
   - LICENSE
