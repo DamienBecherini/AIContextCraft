@@ -26,6 +26,7 @@ virtualenv/
 # Distribution / packaging
 .Python
 build/*
+build/
 !build/.gitkeep
 develop-eggs/
 dist/
