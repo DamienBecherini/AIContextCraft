@@ -92,3 +92,65 @@ def test_basic_concatenation(tmp_path):
     
     # 5. Comparer le contenu du fichier généré avec le fichier attendu
     compare_files_robust(output_file, expected_file)
+
+def test_special_chars_pattern_with_slash(tmp_path):
+    """Valide l'inclusion avec des caractères Unicode et des slashs '/'."""
+    test_project_path = TESTS_DIR / 'test_projects' / 'special_chars_project'
+    output_file = tmp_path / 'special_chars_slash_output.txt'
+
+    args = [
+        '--project', str(test_project_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--config', str(test_project_path / 'config_slash.yaml')
+    ]
+
+    result = run_aicc(args)
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    content = output_file.read_text(encoding='utf-8')
+    assert "--- FICHIER: 🚀 Projets/🏰 Proxmox Homelab/context.txt" in content
+    assert "--- FICHIER: other/ignored.txt" not in content
+
+def test_special_chars_pattern_with_backslashes(tmp_path):
+    """Valide la normalisation des backslashes '\\' en '/' dans les patterns."""
+    test_project_path = TESTS_DIR / 'test_projects' / 'special_chars_project'
+    output_file = tmp_path / 'special_chars_backslash_output.txt'
+
+    args = [
+        '--project', str(test_project_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--config', str(test_project_path / 'config_backslash.yaml')
+    ]
+
+    result = run_aicc(args)
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    content = output_file.read_text(encoding='utf-8')
+    assert "--- FICHIER: 🚀 Projets/🏰 Proxmox Homelab/context.txt" in content
+    assert "--- FICHIER: other/ignored.txt" not in content
+
+def test_invalid_yaml_backslash_error_has_guidance(tmp_path):
+    """Valide le message d'aide pour une config YAML invalide avec escapes."""
+    test_project_path = TESTS_DIR / 'test_projects' / 'basic_project'
+    output_file = tmp_path / 'invalid_yaml_output.txt'
+    invalid_config = tmp_path / 'invalid_config.yaml'
+    invalid_config.write_text(
+        'include_patterns:\n  - "🚀 Projets\\🏰 Proxmox Homelab"\n',
+        encoding='utf-8'
+    )
+
+    args = [
+        '--project', str(test_project_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--config', str(invalid_config)
+    ]
+
+    result = run_aicc(args)
+
+    assert result.returncode != 0
+    assert "Impossible de parser le fichier de configuration" in result.stderr
+    assert "Préférez '/' au lieu de '\\'" in result.stderr
+    assert "quotes simples" in result.stderr

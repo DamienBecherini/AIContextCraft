@@ -1,0 +1,62 @@
+---
+description: Ask to add plan copy and timestamp step
+alwaysApply: true
+---
+
+# Plan Publication Policy
+
+Before generating any implementation plan, ask the user this explicit question:
+
+"Do you want me to add a step that copies the generated plan into `docs/plans/<branch-name>/` and renames it to `YYYY_MM_DD_HH:MM_<plan-title>.plan.md` (example: `2026_05_16_11:30_smtp-flux-separes.plan.md`)?"
+
+If the user answers yes:
+
+- Add that step directly into the plan content.
+- During execution, create `docs/plans/<branch-name>/` if it does not exist.
+- Copy the validated plan file into that folder.
+- Rename the copied file using the format `YYYY_MM_DD_HH:MM_<plan-title>.plan.md`.
+- Normalize `<plan-title>` to lowercase kebab-case (ASCII only) after the timestamp.
+
+If the user answers no:
+
+- Continue normally without adding that publication step.
+
+## Post-Implementation Report Persistence
+
+After implementation is completed and before ending the response:
+
+1. Show the implementation report in chat (changes, modified files, validation/tests).
+2. Ask the user explicitly whether this report should be saved into the plan file.
+3. Save it only if the user answers yes.
+
+If the user answers yes:
+
+- Append the report at the end of the plan file.
+- Insert a clear separator between the original plan and the appended report.
+- Use this structure:
+  - `---`
+  - `## Compte rendu d'implementation`
+  - report content
+
+If the user answers no:
+
+- Do not modify the plan file.
+
+## Unit Test Procedure (mandatory after implementation)
+
+When a task includes Python code changes, run unit tests using the project-integrated procedure below:
+
+1. Rebuild the Docker image first so `/tests` changes are included in the `cli` container:
+   - `./wpm.sh build`
+2. Run tests via the official wrapper script (not raw local `pytest`):
+   - Full suite: `./run-tests-unitaires.sh`
+   - Targeted run: `./run-tests-unitaires.sh tests/test_file.py`
+   - Rerun failed: `./run-tests-unitaires.sh --rerun-failed`
+3. Read the generated log under `logs/unit_tests_run_*.log` and report:
+   - number of collected tests
+   - pass/fail result
+   - warnings (if any)
+
+Notes:
+- This procedure requires Docker daemon access (`/var/run/docker.sock`).
+- If `logs/` permissions block writes, fix ownership before running tests (for example `sudo chown -R $USER:$USER logs`).

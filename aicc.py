@@ -226,6 +226,20 @@ def get_file_stats(content_str, encoding='utf-8'):
             tokens = "Erreur"
     return f"Taille: {formatted_size} ({total_bytes:,} octets), Tokens (estim.): {tokens}"
 
+def normalize_glob_patterns(patterns):
+    """Normalise les patterns pour un matching cross-platform cohérent."""
+    if not patterns:
+        return []
+    normalized = []
+    for pattern in patterns:
+        if not pattern:
+            continue
+        cleaned = pattern.strip()
+        if not cleaned:
+            continue
+        normalized.append(cleaned.replace('\\', '/'))
+    return normalized
+
 # --- Fonction principale ---
 
 def main():
@@ -263,7 +277,13 @@ def main():
             with open(config_path, 'r', encoding=args.encoding) as f:
                 config.update(yaml.safe_load(f) or {})
         except yaml.YAMLError as e:
-            sys.exit(f"ERREUR: Impossible de parser le fichier de configuration '{config_path}': {e}")
+            error_help = (
+                "\nConseils YAML pour les chemins avec caractères spéciaux :\n"
+                "  - Préférez '/' au lieu de '\\' dans les patterns.\n"
+                "  - En YAML double-quoted, '\\' est un caractère d'échappement.\n"
+                "  - Utilisez des quotes simples ('...') ou doublez les backslashes ('\\\\\\\\')."
+            )
+            sys.exit(f"ERREUR: Impossible de parser le fichier de configuration '{config_path}': {e}{error_help}")
 
     project_path = Path(args.project or config.get('project_path', '.')).resolve()
     output_path_str = args.output or config.get('output_path')
@@ -289,10 +309,10 @@ def main():
             return []
         return [p for p in patterns if p and p.strip()]
 
-    include_patterns = clean_patterns(config.get('include_patterns') or ['**/*'])
-    common_filters = clean_patterns(config.get('common_filters') or [])
-    project_only_filters = clean_patterns(config.get('project_only_filters') or [])
-    tree_only_filters = clean_patterns(config.get('tree_only_filters') or [])
+    include_patterns = normalize_glob_patterns(clean_patterns(config.get('include_patterns') or ['**/*']))
+    common_filters = normalize_glob_patterns(clean_patterns(config.get('common_filters') or []))
+    project_only_filters = normalize_glob_patterns(clean_patterns(config.get('project_only_filters') or []))
+    tree_only_filters = normalize_glob_patterns(clean_patterns(config.get('tree_only_filters') or []))
     full_body_filters = config.get('full_body_filters') or []
 
     final_project_filters = common_filters + project_only_filters
@@ -308,7 +328,7 @@ def main():
         if gitignore_path.is_file():
             logging.info(f"Utilisation des filtres de {gitignore_path}")
             with open(gitignore_path, 'r', encoding=args.encoding) as f:
-                gitignore_patterns = clean_patterns(f.read().splitlines())
+                gitignore_patterns = normalize_glob_patterns(clean_patterns(f.read().splitlines()))
                 final_project_filters.extend(gitignore_patterns)
                 final_tree_filters.extend(gitignore_patterns)
 

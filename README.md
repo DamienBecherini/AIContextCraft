@@ -130,6 +130,23 @@ full_body_filters:
   - "run_app"
 ```
 
+### Paths with special characters (Unicode, emoji, Windows separators)
+
+When writing `include_patterns` and exclusion filters:
+
+- Prefer `/` as separator, even on Windows.
+- Unicode characters (accents, emoji) are supported directly.
+- If you must write backslashes, avoid YAML double-quoted traps:
+  - use single quotes: `'🚀 Projets\🏰 Proxmox Homelab\**'`
+  - or escape backslashes in double quotes: `"🚀 Projets\\\\🏰 Proxmox Homelab\\\\**"`
+
+Recommended example:
+
+```yaml
+include_patterns:
+  - "🚀 Projets/🏰 Proxmox Homelab/**"
+```
+
 ## 🗺️ Roadmap
 
 This project has a bright future! Our goal is to make it the most powerful and developer-friendly context-crafting tool available.
