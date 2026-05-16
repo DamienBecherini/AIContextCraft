@@ -42,6 +42,21 @@ If the user answers no:
 
 - Do not modify the plan file.
 
+## Commit Message Proposal (after report question)
+
+After asking whether the implementation report should be saved to the plan file, always provide a commit message proposal.
+
+Requirements:
+
+- Generate a commit message proposal even if the user answers no to report persistence.
+- Include the plan filename in the commit header (subject line).
+- Keep the proposal concise and focused on why the change was made.
+
+Recommended format:
+
+- Header: `<type>(<plan-filename>): <short purpose>`
+- Body: 1-2 short sentences with key intent.
+
 ## Unit Test Procedure (mandatory after implementation)
 
 When a task includes Python code changes, run unit tests using the project-integrated procedure below:
