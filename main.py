@@ -1,4 +1,5 @@
 import argparse
+import base64
 import datetime
 import logging
 import os
@@ -27,11 +28,20 @@ def maybe_copy_to_clipboard(clipboard_enabled, content, console):
     try:
         pyperclip.copy(content)
         console.print("[green]Contenu copié dans le presse-papiers.[/green]")
-    except pyperclip.PyperclipException as e:
-        logging.warning(
-            "Presse-papiers indisponible sur cet environnement (headless/SSH probable): %s",
-            e,
-        )
+    except (
+        pyperclip.PyperclipException,
+        getattr(pyperclip, "PyperclipWindowsException", pyperclip.PyperclipException),
+    ):
+        try:
+            encoded = base64.b64encode(content.encode('utf-8')).decode('ascii')
+            sys.stdout.write(f"\x1b]52;c;{encoded}\x07")
+            sys.stdout.flush()
+            console.print("[green]Contenu envoyé au presse-papiers via SSH (OSC 52).[/green]")
+        except Exception as e:
+            logging.warning(
+                "Fallback OSC 52 indisponible pour la copie presse-papiers: %s",
+                e,
+            )
 
 
 def main():
