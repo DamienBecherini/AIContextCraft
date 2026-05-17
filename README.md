@@ -24,7 +24,7 @@ Stop manually copying and pasting files and start crafting the perfect context i
 *   **Advanced Python Code Processing**:
     *   `--strip-comments`: Reliably remove all comments and docstrings using Abstract Syntax Tree (AST) parsing, not just simple regex.
     *   `--headers-only`: Create a high-level summary of your code by extracting only class and function signatures and their docstrings.
-*   **Customizable Project Tree Generation**: Automatically generate a filtered file tree to give the LLM a clear overview of the project structure.
+*   **Customizable Project Tree Generation**: Automatically generate a filtered file tree with sizes, per-extension totals, and visual markers (`●` concatenated, `○` tree-only via `project_only_filters`) to give the LLM a clear overview of the project structure.
 *   **Built-in Utilities**:
     *   Native `.gitignore` support to automatically exclude files you already ignore.
     *   Automatic token and size calculation with `tiktoken`.

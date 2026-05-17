@@ -93,6 +93,34 @@ def test_basic_concatenation(tmp_path):
     # 5. Comparer le contenu du fichier généré avec le fichier attendu
     compare_files_robust(output_file, expected_file)
 
+def test_tree_stats_project_indicators(tmp_path):
+    """Valide les symboles ●/○, les tailles et le résumé par extension."""
+    test_project_path = TESTS_DIR / 'test_projects' / 'tree_stats_project'
+    output_file = tmp_path / 'tree_stats_output.txt'
+
+    args = [
+        '--project', str(test_project_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--config', str(test_project_path / 'config.yaml'),
+    ]
+
+    result = run_aicc(args)
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    content = output_file.read_text(encoding='utf-8')
+
+    assert '● main.py' in content
+    assert '○ README.md' in content
+    assert 'README.md —' not in content
+    assert 'Extensions (fichiers concaténés)' in content
+    assert 'mixed/' in content and '(Total réel :' in content
+    assert '--- FICHIER: app/main.py' in content
+    assert '--- FICHIER: mixed/included.txt' in content
+    assert '--- FICHIER: README.md' not in content
+    assert '--- FICHIER: mixed/skipped.txt' not in content
+
+
 def test_special_chars_pattern_with_slash(tmp_path):
     """Valide l'inclusion avec des caractères Unicode et des slashs '/'."""
     test_project_path = TESTS_DIR / 'test_projects' / 'special_chars_project'

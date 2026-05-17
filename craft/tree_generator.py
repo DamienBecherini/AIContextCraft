@@ -1,10 +1,32 @@
 import os
 from pathlib import Path
 
+from craft.utils import format_bytes
 
-def generate_tree(directory, include_spec, exclude_spec, show_sizes=False):
-    tree_lines = [f"Arbre du projet : {directory.resolve()}"]
+TREE_LEGEND = (
+    "Légende : ● fichier concaténé dans le contenu ci-dessous ; "
+    "○ fichier affiché à titre indicatif (exclu par project_only_filters). "
+    "Les tailles des dossiers et de la section Extensions indiquent d'abord le total "
+    "des fichiers ●, puis entre parenthèses le total réel de tous les fichiers visibles dans l'arbre."
+)
 
+SYMBOL_CONCATENATED = "●"
+SYMBOL_INDICATIVE = "○"
+NO_EXTENSION_LABEL = "(sans extension)"
+
+
+def build_tree_legend():
+    return TREE_LEGEND
+
+
+def _file_size(path):
+    try:
+        return path.stat().st_size
+    except OSError:
+        return 0
+
+
+def _collect_tree_paths(directory, include_spec, exclude_spec):
     paths_for_tree = set()
 
     for root, dirs, files in os.walk(directory, topdown=True):
@@ -32,7 +54,83 @@ def generate_tree(directory, include_spec, exclude_spec, show_sizes=False):
             final_paths_for_tree.add(parent)
             parent = parent.parent
 
-    paths = sorted(list(final_paths_for_tree))
+    return final_paths_for_tree
+
+
+def _aggregate_dir_sizes(directory, paths, concatenated_paths):
+    file_metrics = {}
+    dir_sizes = {p: [0, 0] for p in paths if p.is_dir()}
+
+    for path in paths:
+        if not path.is_file():
+            continue
+        real_size = _file_size(path)
+        concat_size = real_size if path in concatenated_paths else 0
+        file_metrics[path] = (concat_size, real_size)
+
+        parent = path.parent
+        while True:
+            if parent in dir_sizes:
+                dir_sizes[parent][0] += concat_size
+                dir_sizes[parent][1] += real_size
+            if parent == directory:
+                break
+            parent = parent.parent
+
+    return file_metrics, {d: (v[0], v[1]) for d, v in dir_sizes.items()}
+
+
+def _format_dir_suffix(concat_size, real_size):
+    if concat_size == 0 and real_size == 0:
+        return ""
+    if concat_size == real_size:
+        return f" — {format_bytes(concat_size)}"
+    return f" — {format_bytes(concat_size)} (Total réel : {format_bytes(real_size)})"
+
+
+def _extension_key(path):
+    suffix = path.suffix
+    return suffix if suffix else NO_EXTENSION_LABEL
+
+
+def format_extension_summary(tree_file_paths, concatenated_paths):
+    concat_by_ext = {}
+    real_by_ext = {}
+
+    for path in tree_file_paths:
+        if not path.is_file():
+            continue
+        ext = _extension_key(path)
+        size = _file_size(path)
+        real_by_ext[ext] = real_by_ext.get(ext, 0) + size
+        if path in concatenated_paths:
+            concat_by_ext[ext] = concat_by_ext.get(ext, 0) + size
+
+    if not concat_by_ext:
+        return "Extensions (fichiers concaténés) :\n  (aucune)"
+
+    lines = ["Extensions (fichiers concaténés) :"]
+    for ext in sorted(concat_by_ext.keys(), key=lambda e: e.lower()):
+        concat_size = concat_by_ext[ext]
+        real_size = real_by_ext.get(ext, concat_size)
+        if concat_size == real_size:
+            lines.append(f"  {ext:<20} {format_bytes(concat_size)}")
+        else:
+            lines.append(
+                f"  {ext:<20} {format_bytes(concat_size)} (Total réel : {format_bytes(real_size)})"
+            )
+    return "\n".join(lines)
+
+
+def generate_tree(directory, include_spec, exclude_spec, concatenated_paths):
+    concatenated_paths = set(concatenated_paths)
+    final_paths_for_tree = _collect_tree_paths(directory, include_spec, exclude_spec)
+    file_metrics, dir_sizes = _aggregate_dir_sizes(
+        directory, final_paths_for_tree, concatenated_paths
+    )
+
+    tree_lines = [build_tree_legend(), f"Arbre du projet : {directory.resolve()}"]
+    paths = sorted(final_paths_for_tree)
 
     last_in_level = {}
     for path in paths:
@@ -53,15 +151,17 @@ def generate_tree(directory, include_spec, exclude_spec, show_sizes=False):
         connector = "└── " if is_last else "├── "
 
         if path.is_dir():
-            tree_lines.append(f"{indent}{connector}{path.name}/")
+            concat_size, real_size = dir_sizes.get(path, (0, 0))
+            suffix = _format_dir_suffix(concat_size, real_size)
+            tree_lines.append(f"{indent}{connector}{path.name}/{suffix}")
         else:
-            if show_sizes:
-                try:
-                    size_kb = path.stat().st_size / 1024.0
-                    tree_lines.append(f"{indent}{connector}{path.name} ({size_kb:.2f} KB)")
-                except OSError:
-                    tree_lines.append(f"{indent}{connector}{path.name} (taille inconnue)")
+            concat_size, real_size = file_metrics.get(path, (0, 0))
+            if path in concatenated_paths:
+                tree_lines.append(
+                    f"{indent}{connector}{SYMBOL_CONCATENATED} {path.name} — {format_bytes(concat_size)}"
+                )
             else:
-                tree_lines.append(f"{indent}{connector}{path.name}")
+                tree_lines.append(f"{indent}{connector}{SYMBOL_INDICATIVE} {path.name}")
 
-    return "\n".join(tree_lines)
+    return "\n".join(tree_lines), final_paths_for_tree
+

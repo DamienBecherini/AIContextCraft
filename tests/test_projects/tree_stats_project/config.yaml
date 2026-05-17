@@ -1,0 +1,11 @@
+include_patterns:
+  - '**/*'
+common_filters:
+  - ".git/"
+  - "build/"
+  - "expected_output.txt"
+  - "*.log"
+project_only_filters:
+  - "README.md"
+  - "mixed/skipped.txt"
+tree_only_filters: []

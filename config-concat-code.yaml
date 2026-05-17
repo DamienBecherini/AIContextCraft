@@ -21,6 +21,7 @@ include_patterns:
 # Idéal pour exclure les dépendances, les builds, les caches, etc.
 common_filters:
   - "__pycache__/"
+  - ".pytest_cache/"
   - "*.pyc"
   - ".git/"
   - ".venv/"

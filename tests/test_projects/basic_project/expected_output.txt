@@ -3,11 +3,16 @@ Date de génération : 2025-09-09 23:59:15
 Statistiques du contenu : Taille: 1.56 KB (1,602 octets), Tokens (estim.): 244
 
 Arbre du projet : /home/lachouette/utils/ai-context-craft/tests/test_projects/basic_project
-├── .gitignore
-├── app/
-│   └── main.py
-├── config.yaml
-└── utils.py
+├── ● .gitignore — 51 B
+├── app/ — 125 B
+│   └── ● main.py — 125 B
+├── ● config.yaml — 211 B
+└── ● utils.py — 85 B
+
+Extensions (fichiers concaténés) :
+  (sans extension)     51 B
+  .py                  210 B
+  .yaml                211 B
 
 --------------------------------------------------------------------------------
 CONTENU DES FICHIERS

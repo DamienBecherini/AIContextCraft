@@ -11,7 +11,7 @@ import yaml
 from craft.file_processor import get_python_headers, strip_comments_from_code
 from craft.filter_manager import normalize_glob_patterns
 from craft.git_manager import get_git_diff
-from craft.tree_generator import generate_tree
+from craft.tree_generator import format_extension_summary, generate_tree
 from craft.utils import get_file_stats, setup_logging
 
 
@@ -23,7 +23,7 @@ def main():
     parser.add_argument('--no-timestamp', action='store_true', help="Ne pas ajouter de timestamp au nom du fichier de sortie.")
     parser.add_argument('--strip-comments', action='store_true', help="Supprimer les commentaires des fichiers.")
     parser.add_argument('--headers-only', action='store_true', help="Ne conserver que les signatures de fonctions/méthodes.")
-    parser.add_argument('--tree-only', action='store_true', help="Génère uniquement l'arbre du projet avec le poids des fichiers en Ko, sans leur contenu.")
+    parser.add_argument('--tree-only', action='store_true', help="Génère uniquement l'arbre du projet (tailles, extensions) sans le contenu des fichiers.")
     parser.add_argument('--dry-run', action='store_true', help="Simule l'opération sans écrire de fichier.")
     parser.add_argument('--encoding', type=str, default='utf-8', help="Encodage des fichiers (défaut: utf-8).")
     parser.add_argument('--use-gitignore', action='store_true', help="Utilise le .gitignore du projet pour filtrer les fichiers.")
@@ -162,9 +162,6 @@ def main():
     logging.info(f"  - FILTRES D'EXCLUSION (ARBRE): {final_tree_filters}")
     logging.info("="*50)
 
-    logging.info("Génération de l'arbre du projet...")
-    project_tree = generate_tree(project_path, include_spec, tree_exclude_spec, show_sizes=args.tree_only)
-
     print("Concaténation des fichiers...")
     all_files_content = []
 
@@ -188,6 +185,14 @@ def main():
                 final_file_list.append(file_path)
 
     final_file_list.sort()
+    concatenated_paths = set(final_file_list)
+
+    logging.info("Génération de l'arbre du projet...")
+    project_tree, tree_paths = generate_tree(
+        project_path, include_spec, tree_exclude_spec, concatenated_paths
+    )
+    tree_file_paths = {p for p in tree_paths if p.is_file()}
+    extension_summary = format_extension_summary(tree_file_paths, concatenated_paths)
     logging.info(f"{len(final_file_list)} fichiers finaux trouvés après filtrage optimisé.")
     logging.info("--- LISTE DES FICHIERS À TRAITER ---")
     for p in final_file_list:
@@ -214,11 +219,14 @@ def main():
 
         logging.info("Assemblage du fichier de sortie...")
         body_content_str = "".join(all_files_content)
-        full_body = project_tree + "\n\n" + "-"*80 + "\nCONTENU DES FICHIERS\n" + "-"*80 + "\n\n" + body_content_str
+        full_body = (
+            project_tree + "\n\n" + extension_summary + "\n\n"
+            + "-" * 80 + "\nCONTENU DES FICHIERS\n" + "-" * 80 + "\n\n" + body_content_str
+        )
         stats = get_file_stats(full_body, args.encoding)
     else:
         logging.info("Mode --tree-only activé : saut de la lecture du contenu des fichiers.")
-        full_body = project_tree
+        full_body = project_tree + "\n\n" + extension_summary
         stats = "N/A (Mode arbre uniquement)"
 
     final_output_str = "".join([
