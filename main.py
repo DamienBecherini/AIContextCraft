@@ -11,6 +11,7 @@ import yaml
 from craft.file_processor import get_python_headers, strip_comments_from_code
 from craft.filter_manager import normalize_glob_patterns
 from craft.git_manager import get_git_diff
+from craft.ignore_manager import IgnoreManager
 from craft.tree_generator import format_extension_summary, generate_tree
 from craft.utils import get_file_stats, setup_logging
 
@@ -26,7 +27,7 @@ def main():
     parser.add_argument('--tree-only', action='store_true', help="Génère uniquement l'arbre du projet (tailles, extensions) sans le contenu des fichiers.")
     parser.add_argument('--dry-run', action='store_true', help="Simule l'opération sans écrire de fichier.")
     parser.add_argument('--encoding', type=str, default='utf-8', help="Encodage des fichiers (défaut: utf-8).")
-    parser.add_argument('--use-gitignore', action='store_true', help="Utilise le .gitignore du projet pour filtrer les fichiers.")
+    parser.add_argument('--no-ignore', action='store_true', help="Désactive les .gitignore hiérarchiques (les règles de sécurité restent actives).")
     parser.add_argument('--git-diff', nargs=2, metavar=('REF_A', 'REF_B'), help="Mode spécial: génère un rapport Markdown du diff Git global entre deux révisions.")
     parser.add_argument('-v', '--verbose', action='store_true', help="Affiche des informations détaillées sur la console.")
     args = parser.parse_args()
@@ -142,14 +143,13 @@ def main():
     final_project_filters.append(auto_exclude_pattern)
     final_tree_filters.append(auto_exclude_pattern)
 
-    if args.use_gitignore:
-        gitignore_path = project_path / '.gitignore'
-        if gitignore_path.is_file():
-            logging.info(f"Utilisation des filtres de {gitignore_path}")
-            with open(gitignore_path, 'r', encoding=args.encoding) as f:
-                gitignore_patterns = normalize_glob_patterns(clean_patterns(f.read().splitlines()))
-                final_project_filters.extend(gitignore_patterns)
-                final_tree_filters.extend(gitignore_patterns)
+    ignore_manager = IgnoreManager(
+        project_path, disabled=args.no_ignore, encoding=args.encoding
+    )
+    if args.no_ignore:
+        logging.info("Bouclier natif : .gitignore désactivés (--no-ignore), règles de sécurité actives.")
+    else:
+        logging.info("Bouclier natif : .gitignore hiérarchiques actifs (étage 1).")
 
     include_spec = pathspec.PathSpec.from_lines('gitwildmatch', include_patterns)
     project_exclude_spec = pathspec.PathSpec.from_lines('gitwildmatch', final_project_filters)
@@ -170,8 +170,11 @@ def main():
     for root, dirs, files in os.walk(project_path, topdown=True):
         excluded_dirs = []
         for d in dirs:
-            dir_path_str = str((Path(root) / d).relative_to(project_path)).replace('\\', '/')
-            if project_exclude_spec.match_file(dir_path_str) or project_exclude_spec.match_file(dir_path_str + '/'):
+            dir_path = Path(root) / d
+            dir_path_str = str(dir_path.relative_to(project_path)).replace('\\', '/')
+            if ignore_manager.is_ignored(dir_path):
+                excluded_dirs.append(d)
+            elif project_exclude_spec.match_file(dir_path_str) or project_exclude_spec.match_file(dir_path_str + '/'):
                 excluded_dirs.append(d)
 
         for d in excluded_dirs:
@@ -181,6 +184,8 @@ def main():
             file_path = Path(root) / filename
             relative_path_str = str(file_path.relative_to(project_path)).replace('\\', '/')
 
+            if ignore_manager.is_ignored(file_path):
+                continue
             if include_spec.match_file(relative_path_str) and not project_exclude_spec.match_file(relative_path_str):
                 final_file_list.append(file_path)
 
@@ -189,7 +194,8 @@ def main():
 
     logging.info("Génération de l'arbre du projet...")
     project_tree, tree_paths = generate_tree(
-        project_path, include_spec, tree_exclude_spec, concatenated_paths
+        project_path, include_spec, tree_exclude_spec, concatenated_paths,
+        ignore_manager=ignore_manager,
     )
     tree_file_paths = {p for p in tree_paths if p.is_file()}
     extension_summary = format_extension_summary(tree_file_paths, concatenated_paths)

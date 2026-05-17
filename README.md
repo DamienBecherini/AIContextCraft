@@ -25,8 +25,11 @@ Stop manually copying and pasting files and start crafting the perfect context i
     *   `--strip-comments`: Reliably remove all comments and docstrings using Abstract Syntax Tree (AST) parsing, not just simple regex.
     *   `--headers-only`: Create a high-level summary of your code by extracting only class and function signatures and their docstrings.
 *   **Customizable Project Tree Generation**: Automatically generate a filtered file tree with sizes, per-extension totals, and visual markers (`●` concatenated, `○` tree-only via `project_only_filters`) to give the LLM a clear overview of the project structure.
+*   **Two-Stage Filtering (Shield + Scalpel)**:
+    *   **Stage 1 (Shield, on by default):** Hierarchical `.gitignore` files are applied during directory traversal for fast pruning, plus hardcoded security patterns (`.env`, `.env.*`, `*.pem`, `*.key`, `.git/`) that always apply.
+    *   **Stage 2 (Scalpel):** YAML `include_patterns` and exclusion filters refine what remains.
+    *   Use `--no-ignore` to disable `.gitignore` matching while keeping security exclusions.
 *   **Built-in Utilities**:
-    *   Native `.gitignore` support to automatically exclude files you already ignore.
     *   Automatic token and size calculation with `tiktoken`.
     *   Verbose logging for easy debugging.
 
@@ -72,7 +75,7 @@ python main.py -p /path/to/your/project -o /path/to/output/context.txt
 | `-o`, `--output`     | Path for the generated output file.                                       |
 | `--strip-comments`   | Remove comments and docstrings from code files.                           |
 | `--headers-only`     | Extract only function/class signatures and docstrings from Python files.  |
-| `--use-gitignore`    | Automatically use the project's `.gitignore` file for exclusions.         |
+| `--no-ignore`        | Disable hierarchical `.gitignore` filtering (security patterns still apply). |
 | `--git-diff`         | Generate a Markdown report with the global Git diff between two revisions. |
 | `--no-timestamp`     | Do not append a timestamp to the output filename.                         |
 | `--dry-run`          | Run the script without writing any files to see what would be included.   |
@@ -80,11 +83,13 @@ python main.py -p /path/to/your/project -o /path/to/output/context.txt
 
 ### Example Workflow
 
-Generate a context for a Python project, removing all comments and respecting the `.gitignore` file:
+Generate a context for a Python project with comments stripped (`.gitignore` and security filters apply by default):
 
 ```bash
-python main.py --project ./my-python-app --strip-comments --use-gitignore -v
+python main.py --project ./my-python-app --strip-comments -v
 ```
+
+On large repositories (Node, Python, etc.), ignored folders such as `node_modules/` or `.venv/` are pruned during traversal before YAML filters run, which speeds up scanning significantly.
 
 This will create a file in the `build/` directory containing the project tree and the cleaned content of all relevant files.
 

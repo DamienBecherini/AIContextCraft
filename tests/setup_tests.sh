@@ -106,6 +106,33 @@ EOF
     echo "    Projet 'strip_comments_project' créé."
 }
 
+# Scénario 3 : .gitignore hiérarchiques et règles de sécurité (Phase 1)
+create_nested_ignore_project() {
+    local project_dir="$TEST_PROJECTS_ROOT/nested_ignore_project"
+    echo -e "${COLOR_BLUE}--> Création du projet de test : 'nested_ignore_project'${COLOR_NC}"
+
+    rm -rf "$project_dir"
+    mkdir -p "$project_dir/logs" "$project_dir/frontend/node_modules/pkg" "$project_dir/frontend/src"
+
+    cat << 'EOF' > "$project_dir/config.yaml"
+include_patterns:
+  - '**/*'
+common_filters:
+  - ".git/"
+project_only_filters: []
+tree_only_filters: []
+EOF
+
+    echo 'logs/' > "$project_dir/.gitignore"
+    echo 'node_modules/' > "$project_dir/frontend/.gitignore"
+    echo 'SECRET=should-not-appear' > "$project_dir/logs/secret.log"
+    echo 'module.exports = {};' > "$project_dir/frontend/node_modules/pkg/index.js"
+    echo 'export const ok = true;' > "$project_dir/frontend/src/ok.js"
+    echo 'FAKE_SECRET=do-not-leak' > "$project_dir/.env.local"
+
+    echo "    Projet 'nested_ignore_project' créé."
+}
+
 # --- Fonction pour générer les fichiers "Golden" (attendus) ---
 
 generate_golden_files() {
@@ -165,6 +192,7 @@ main() {
     # Appeler les fonctions pour créer chaque projet
     create_basic_project
     create_strip_comments_project
+    create_nested_ignore_project
     # Ajoutez ici les appels pour vos futurs projets de test
     # create_headers_only_project
 

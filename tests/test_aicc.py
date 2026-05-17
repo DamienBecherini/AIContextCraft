@@ -230,6 +230,48 @@ def test_git_diff_mode_generates_markdown_output(tmp_path):
     assert "+print('v2')" in content
 
 
+def test_nested_gitignore_and_security_patterns(tmp_path):
+    """Valide le Bouclier : .gitignore hiérarchiques et règles de sécurité."""
+    test_project_path = TESTS_DIR / 'test_projects' / 'nested_ignore_project'
+    output_file = tmp_path / 'nested_ignore_output.txt'
+
+    args = [
+        '--project', str(test_project_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--config', str(test_project_path / 'config.yaml'),
+    ]
+
+    result = run_aicc(args)
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    content = output_file.read_text(encoding='utf-8')
+    assert '--- FICHIER: frontend/src/ok.js' in content
+    assert '--- FICHIER: logs/' not in content
+    assert '--- FICHIER: logs/secret.log' not in content
+    assert '--- FICHIER: frontend/node_modules/' not in content
+    assert '--- FICHIER: .env.local' not in content
+    assert 'FAKE_SECRET' not in content
+
+    output_no_ignore = tmp_path / 'nested_ignore_no_ignore_output.txt'
+    args_no_ignore = [
+        '--project', str(test_project_path),
+        '--output', str(output_no_ignore),
+        '--no-timestamp',
+        '--config', str(test_project_path / 'config.yaml'),
+        '--no-ignore',
+    ]
+    result_no_ignore = run_aicc(args_no_ignore)
+    assert result_no_ignore.returncode == 0, (
+        f"Le script a échoué avec le code {result_no_ignore.returncode}.\n"
+        f"Stderr: {result_no_ignore.stderr}"
+    )
+    content_no_ignore = output_no_ignore.read_text(encoding='utf-8')
+    assert '--- FICHIER: logs/secret.log' in content_no_ignore
+    assert '--- FICHIER: frontend/node_modules/pkg/index.js' in content_no_ignore
+    assert '--- FICHIER: .env.local' not in content_no_ignore
+    assert 'FAKE_SECRET' not in content_no_ignore
+
+
 def test_git_diff_mode_with_invalid_ref_fails(tmp_path):
     """Valide qu'une référence Git invalide provoque une erreur claire."""
     repo_path = tmp_path / 'repo_invalid_ref'

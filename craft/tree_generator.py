@@ -26,7 +26,7 @@ def _file_size(path):
         return 0
 
 
-def _collect_tree_paths(directory, include_spec, exclude_spec):
+def _collect_tree_paths(directory, include_spec, exclude_spec, ignore_manager=None):
     paths_for_tree = set()
 
     for root, dirs, files in os.walk(directory, topdown=True):
@@ -34,8 +34,11 @@ def _collect_tree_paths(directory, include_spec, exclude_spec):
 
         excluded_dirs = []
         for d in dirs:
-            dir_path_str = str((root_path / d).relative_to(directory)).replace('\\', '/')
-            if exclude_spec.match_file(dir_path_str) or exclude_spec.match_file(dir_path_str + '/'):
+            dir_path = root_path / d
+            dir_path_str = str(dir_path.relative_to(directory)).replace('\\', '/')
+            if ignore_manager and ignore_manager.is_ignored(dir_path):
+                excluded_dirs.append(d)
+            elif exclude_spec.match_file(dir_path_str) or exclude_spec.match_file(dir_path_str + '/'):
                 excluded_dirs.append(d)
 
         for d in excluded_dirs:
@@ -43,6 +46,8 @@ def _collect_tree_paths(directory, include_spec, exclude_spec):
 
         for name in dirs + files:
             item_path = root_path / name
+            if ignore_manager and ignore_manager.is_ignored(item_path):
+                continue
             relative_p_str = str(item_path.relative_to(directory)).replace('\\', '/')
             if include_spec.match_file(relative_p_str) and not exclude_spec.match_file(relative_p_str):
                 paths_for_tree.add(item_path)
@@ -122,9 +127,11 @@ def format_extension_summary(tree_file_paths, concatenated_paths):
     return "\n".join(lines)
 
 
-def generate_tree(directory, include_spec, exclude_spec, concatenated_paths):
+def generate_tree(directory, include_spec, exclude_spec, concatenated_paths, ignore_manager=None):
     concatenated_paths = set(concatenated_paths)
-    final_paths_for_tree = _collect_tree_paths(directory, include_spec, exclude_spec)
+    final_paths_for_tree = _collect_tree_paths(
+        directory, include_spec, exclude_spec, ignore_manager=ignore_manager
+    )
     file_metrics, dir_sizes = _aggregate_dir_sizes(
         directory, final_paths_for_tree, concatenated_paths
     )
