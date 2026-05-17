@@ -1,5 +1,6 @@
 # tests/test_aicc.py
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -15,12 +16,16 @@ AICC_SCRIPT = PROJECT_ROOT / 'main.py'
 def run_aicc(args, cwd=PROJECT_ROOT):
     """Exécute le script main.py avec les arguments fournis via subprocess."""
     command = [sys.executable, str(AICC_SCRIPT)] + args
+    env = os.environ.copy()
+    env.setdefault("NO_COLOR", "1")
+    env.setdefault("TERM", "dumb")
     result = subprocess.run(
         command,
         capture_output=True,
         text=True,
         encoding='utf-8',
-        cwd=cwd
+        cwd=cwd,
+        env=env,
     )
     return result
 

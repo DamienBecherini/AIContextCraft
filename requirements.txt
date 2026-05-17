@@ -2,3 +2,5 @@ pyyaml
 tiktoken
 pathspec
 pytest
+rich
+pyperclip

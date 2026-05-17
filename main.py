@@ -6,7 +6,10 @@ import sys
 from pathlib import Path
 
 import pathspec
+import pyperclip
 import yaml
+from rich.console import Console
+from rich.progress import track
 
 from craft.file_processor import get_python_headers, strip_comments_from_code
 from craft.filter_manager import normalize_glob_patterns
@@ -17,7 +20,22 @@ from craft.tree_generator import format_extension_summary, generate_tree
 from craft.utils import get_file_stats, setup_logging
 
 
+def maybe_copy_to_clipboard(clipboard_enabled, content, console):
+    if not clipboard_enabled:
+        return
+
+    try:
+        pyperclip.copy(content)
+        console.print("[green]Contenu copié dans le presse-papiers.[/green]")
+    except pyperclip.PyperclipException as e:
+        logging.warning(
+            "Presse-papiers indisponible sur cet environnement (headless/SSH probable): %s",
+            e,
+        )
+
+
 def main():
+    console = Console()
     parser = argparse.ArgumentParser(description="Agrège les fichiers d'un projet en un seul fichier texte pour une IA.")
     parser.add_argument('-c', '--config', type=str, help="Chemin vers le fichier de configuration YAML.")
     parser.add_argument('-p', '--project', type=str, help="Chemin vers le projet cible.")
@@ -31,6 +49,7 @@ def main():
     parser.add_argument('--no-ignore', action='store_true', help="Désactive les .gitignore hiérarchiques (les règles de sécurité restent actives).")
     parser.add_argument('--git-diff', nargs=2, metavar=('REF_A', 'REF_B'), help="Mode spécial: génère un rapport Markdown du diff Git global entre deux révisions.")
     parser.add_argument('--format', choices=['text', 'xml', 'markdown'], help="Format de sortie: text (défaut), xml ou markdown.")
+    parser.add_argument('-cb', '--clipboard', action='store_true', help="Copie le contenu final dans le presse-papiers.")
     parser.add_argument('-v', '--verbose', action='store_true', help="Affiche des informations détaillées sur la console.")
     args = parser.parse_args()
 
@@ -77,7 +96,7 @@ def main():
     setup_logging(log_path, args.verbose)
 
     if args.dry_run:
-        print("--- MODE DRY RUN ACTIVÉ : AUCUN FICHIER NE SERA ÉCRIT ---")
+        console.print("[bold yellow]--- MODE DRY RUN ACTIVÉ : AUCUN FICHIER NE SERA ÉCRIT ---[/bold yellow]")
     if not config_path.exists():
         with open(config_path, 'w', encoding=args.encoding) as f:
             yaml.dump(DEFAULT_CONFIG, f, sort_keys=False, allow_unicode=True)
@@ -123,14 +142,15 @@ def main():
             output_path.parent.mkdir(parents=True, exist_ok=True)
             with open(output_path, 'w', encoding=args.encoding) as f:
                 f.write(final_output_str)
-            print("\nOpération terminée.")
-            print(f"Fichier de sortie généré : {output_path.resolve()}")
+            console.print("\n[bold green]Opération terminée.[/bold green]")
+            console.print(f"[cyan]Fichier de sortie généré :[/cyan] {output_path.resolve()}")
         else:
-            print("\nOpération (dry run) terminée.")
-            print(f"Le fichier de sortie aurait été : {output_path.resolve()}")
+            console.print("\n[bold yellow]Opération (dry run) terminée.[/bold yellow]")
+            console.print(f"[cyan]Le fichier de sortie aurait été :[/cyan] {output_path.resolve()}")
 
-        print(f"Fichier de log généré : {log_path.resolve()}")
-        print(f"Statistiques finales : {stats}")
+        maybe_copy_to_clipboard(args.clipboard, final_output_str, console)
+        console.print(f"[cyan]Fichier de log généré :[/cyan] {log_path.resolve()}")
+        console.print(f"[magenta]Statistiques finales :[/magenta] {stats}")
         return
 
     logging.info("Assemblage des filtres...")
@@ -173,7 +193,7 @@ def main():
     logging.info(f"  - FILTRES D'EXCLUSION (ARBRE): {final_tree_filters}")
     logging.info("="*50)
 
-    print("Concaténation des fichiers...")
+    console.print("[bold]Concaténation des fichiers...[/bold]")
     files_data = []
 
     logging.info("Recherche optimisée des fichiers (avec élagage des dossiers exclus)...")
@@ -217,12 +237,16 @@ def main():
     logging.info("--- FIN DE LA LISTE ---")
 
     if not args.tree_only:
-        for file_path in final_file_list:
+        file_iterator = track(
+            final_file_list,
+            description="Traitement des fichiers...",
+            disable=not sys.stdout.isatty(),
+        )
+        for file_path in file_iterator:
             relative_path_str = str(file_path.relative_to(project_path)).replace('\\', '/')
             try:
                 with open(file_path, 'r', encoding=args.encoding, errors='ignore') as f:
                     content = f.read()
-                logging.info(f"  -> Traitement de : {relative_path_str}")
 
                 if args.headers_only and file_path.suffix == '.py':
                     content = get_python_headers(content, full_body_filters)
@@ -264,14 +288,15 @@ def main():
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, 'w', encoding=args.encoding) as f:
             f.write(final_output_str)
-        print("\nOpération terminée.")
-        print(f"Fichier de sortie généré : {output_path.resolve()}")
+        console.print("\n[bold green]Opération terminée.[/bold green]")
+        console.print(f"[cyan]Fichier de sortie généré :[/cyan] {output_path.resolve()}")
     else:
-        print("\nOpération (dry run) terminée.")
-        print(f"Le fichier de sortie aurait été : {output_path.resolve()}")
+        console.print("\n[bold yellow]Opération (dry run) terminée.[/bold yellow]")
+        console.print(f"[cyan]Le fichier de sortie aurait été :[/cyan] {output_path.resolve()}")
 
-    print(f"Fichier de log généré : {log_path.resolve()}")
-    print(f"Statistiques finales : {stats}")
+    maybe_copy_to_clipboard(args.clipboard, final_output_str, console)
+    console.print(f"[cyan]Fichier de log généré :[/cyan] {log_path.resolve()}")
+    console.print(f"[magenta]Statistiques finales :[/magenta] {stats}")
 
 
 if __name__ == '__main__':

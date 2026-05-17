@@ -1,4 +1,8 @@
 import logging
+import os
+
+from rich.console import Console
+from rich.logging import RichHandler
 
 try:
     import tiktoken
@@ -18,10 +22,18 @@ def setup_logging(log_file_path, verbose):
     file_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
-    console_handler = logging.StreamHandler()
+
+    disable_color = bool(os.environ.get("NO_COLOR")) or not os.isatty(2)
+    console = Console(stderr=True, no_color=disable_color)
+    console_handler = RichHandler(
+        console=console,
+        show_time=False,
+        show_path=False,
+        rich_tracebacks=False,
+        markup=False,
+    )
     console_handler.setLevel(logging.INFO if verbose else logging.WARNING)
-    console_formatter = logging.Formatter('%(message)s')
-    console_handler.setFormatter(console_formatter)
+    console_handler.setFormatter(logging.Formatter('%(message)s'))
     logger.addHandler(console_handler)
 
 
