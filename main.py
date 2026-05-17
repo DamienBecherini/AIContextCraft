@@ -6,23 +6,24 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
-import pathspec
 import pyperclip
 import yaml
 from rich.console import Console
 from rich.progress import track
 
 from craft.file_processor import get_python_headers, strip_comments_from_code
-from craft.filter_manager import normalize_glob_patterns
+from craft.filter_manager import FilterManager
 from craft.formatter import build_output
 from craft.git_manager import get_git_diff
 from craft.ignore_manager import IgnoreManager
 from craft.tree_generator import format_extension_summary, generate_tree
+from craft.types import ProcessedFile
 from craft.utils import get_file_stats, setup_logging
 
 
-def maybe_copy_to_clipboard(clipboard_enabled, content, console):
+def maybe_copy_to_clipboard(clipboard_enabled: bool, content: str, console: Console) -> None:
     if not clipboard_enabled:
         return
 
@@ -45,7 +46,7 @@ def maybe_copy_to_clipboard(clipboard_enabled, content, console):
             )
 
 
-def should_copy_to_clipboard(args, content, console):
+def should_copy_to_clipboard(args: argparse.Namespace, content: str, console: Console) -> bool:
     if args.no_clipboard:
         logging.info("Copie presse-papiers désactivée via --no-clipboard.")
         return False
@@ -72,7 +73,12 @@ def should_copy_to_clipboard(args, content, console):
     return True
 
 
-def print_config_resolution_status(console, config_path, config_source, explicit_config_path):
+def print_config_resolution_status(
+    console: Console,
+    config_path: Path | None,
+    config_source: str,
+    explicit_config_path: Path | None,
+) -> None:
     if config_source == "explicit":
         console.print(f"[cyan]Configuration utilisée :[/cyan] explicite ({config_path.resolve()})")
     elif config_source == "auto":
@@ -85,7 +91,12 @@ def print_config_resolution_status(console, config_path, config_source, explicit
         console.print("[yellow]Configuration :[/yellow] aucun fichier trouvé, fallback defaults.")
 
 
-def print_ignore_report(console, project_path, ignore_manager, disabled=False):
+def print_ignore_report(
+    console: Console,
+    project_path: Path,
+    ignore_manager: IgnoreManager,
+    disabled: bool = False,
+) -> None:
     ignore_report = ignore_manager.get_ignore_file_report()
     ignore_names = ", ".join(ignore_manager.IGNORE_FILENAMES)
     header = f"[cyan]Fichiers d'ignore détectés ({ignore_names}) :[/cyan]"
@@ -126,7 +137,7 @@ def print_ignore_report(console, project_path, ignore_manager, disabled=False):
         console.print(f"  - {rel_path} ({status})")
 
 
-def parse_ignore_type_values(raw_value, parser, flag_name):
+def parse_ignore_type_values(raw_value: str | None, parser: argparse.ArgumentParser, flag_name: str) -> set[str]:
     if not raw_value:
         return set()
 
@@ -156,7 +167,7 @@ def build_execution_report(
     dry_run,
     no_ignore,
     disabled_ignore_types,
-):
+) -> dict[str, Any]:
     return {
         "status": status,
         "mode": mode,
@@ -171,7 +182,7 @@ def build_execution_report(
     }
 
 
-def emit_json_report(report):
+def emit_json_report(report: dict[str, Any]) -> None:
     sys.stdout.write(json.dumps(report, ensure_ascii=False) + "\n")
 
 
@@ -395,25 +406,8 @@ def main():
         return
 
     logging.info("Assemblage des filtres...")
-
-    def clean_patterns(patterns):
-        if not patterns:
-            return []
-        return [p for p in patterns if p and p.strip()]
-
-    include_patterns = normalize_glob_patterns(clean_patterns(config.get('include_patterns') or ['**/*']))
-    common_filters = normalize_glob_patterns(clean_patterns(config.get('common_filters') or []))
-    project_only_filters = normalize_glob_patterns(clean_patterns(config.get('project_only_filters') or []))
-    tree_only_filters = normalize_glob_patterns(clean_patterns(config.get('tree_only_filters') or []))
+    filter_manager = FilterManager(config, output_path)
     full_body_filters = config.get('full_body_filters') or []
-
-    final_project_filters = common_filters + project_only_filters
-    final_tree_filters = common_filters + tree_only_filters
-
-    output_path_base = Path(output_path_str).stem
-    auto_exclude_pattern = f'{output_path_base}*'
-    final_project_filters.append(auto_exclude_pattern)
-    final_tree_filters.append(auto_exclude_pattern)
 
     disabled_ignore_types = set()
     if args.skip_ignore_files:
@@ -450,19 +444,15 @@ def main():
             ", ".join(ignore_manager.IGNORE_FILENAMES),
         )
 
-    include_spec = pathspec.PathSpec.from_lines('gitwildmatch', include_patterns)
-    project_exclude_spec = pathspec.PathSpec.from_lines('gitwildmatch', final_project_filters)
-    tree_exclude_spec = pathspec.PathSpec.from_lines('gitwildmatch', final_tree_filters)
-
     logging.info("="*50)
     logging.info("CONFIGURATION FINALE DES FILTRES DE DÉBOGAGE")
-    logging.info(f"  - PATTERNS D'INCLUSION: {include_patterns}")
-    logging.info(f"  - FILTRES D'EXCLUSION (CONTENU): {final_project_filters}")
-    logging.info(f"  - FILTRES D'EXCLUSION (ARBRE): {final_tree_filters}")
+    logging.info(f"  - PATTERNS D'INCLUSION: {filter_manager.include_patterns}")
+    logging.info(f"  - FILTRES D'EXCLUSION (CONTENU): {filter_manager.project_filters}")
+    logging.info(f"  - FILTRES D'EXCLUSION (ARBRE): {filter_manager.tree_filters}")
     logging.info("="*50)
 
     console.print("[bold]Concaténation des fichiers...[/bold]")
-    files_data = []
+    files_data: list[ProcessedFile] = []
 
     logging.info("Recherche optimisée des fichiers (avec élagage des dossiers exclus)...")
     final_file_list = []
@@ -473,7 +463,7 @@ def main():
             dir_path_str = str(dir_path.relative_to(project_path)).replace('\\', '/')
             if ignore_manager.is_ignored(dir_path):
                 excluded_dirs.append(d)
-            elif project_exclude_spec.match_file(dir_path_str) or project_exclude_spec.match_file(dir_path_str + '/'):
+            elif filter_manager.is_project_excluded(dir_path_str, is_dir=True):
                 excluded_dirs.append(d)
 
         for d in excluded_dirs:
@@ -485,7 +475,9 @@ def main():
 
             if ignore_manager.is_ignored(file_path):
                 continue
-            if include_spec.match_file(relative_path_str) and not project_exclude_spec.match_file(relative_path_str):
+            if filter_manager.is_included(relative_path_str) and not filter_manager.is_project_excluded(
+                relative_path_str
+            ):
                 final_file_list.append(file_path)
 
     final_file_list.sort()
@@ -493,7 +485,7 @@ def main():
 
     logging.info("Génération de l'arbre du projet...")
     project_tree, tree_paths = generate_tree(
-        project_path, include_spec, tree_exclude_spec, concatenated_paths,
+        project_path, filter_manager, concatenated_paths,
         ignore_manager=ignore_manager,
     )
     tree_file_paths = {p for p in tree_paths if p.is_file()}
@@ -521,7 +513,7 @@ def main():
                 elif args.strip_comments:
                     content = strip_comments_from_code(content, file_path)
 
-                files_data.append((relative_path_str, content))
+                files_data.append(ProcessedFile(path=relative_path_str, content=content))
             except IOError as e:
                 logging.error(f"  -> ERREUR: Impossible de lire {relative_path_str}. Erreur: {e}")
 

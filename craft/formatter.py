@@ -1,8 +1,10 @@
 from html import escape
 from pathlib import Path
 
+from craft.types import ProcessedFile
 
-def _markdown_language_for_path(relative_path):
+
+def _markdown_language_for_path(relative_path: str) -> str:
     suffix = Path(relative_path).suffix.lower()
     mapping = {
         '.py': 'python',
@@ -25,14 +27,19 @@ def _markdown_language_for_path(relative_path):
     return mapping.get(suffix, 'text')
 
 
-def _build_text_output(project_tree, extension_summary, files_data, tree_only=False):
+def _build_text_output(
+    project_tree: str,
+    extension_summary: str,
+    files_data: list[ProcessedFile],
+    tree_only: bool = False,
+) -> str:
     if tree_only:
         return project_tree + "\n\n" + extension_summary
 
     all_files_content = []
-    for relative_path, content in files_data:
-        header = f"\n{'='*80}\n--- FICHIER: {relative_path}\n{'='*80}\n\n"
-        all_files_content.append(header + content)
+    for file_data in files_data:
+        header = f"\n{'='*80}\n--- FICHIER: {file_data.path}\n{'='*80}\n\n"
+        all_files_content.append(header + file_data.content)
 
     body_content_str = "".join(all_files_content)
     return (
@@ -41,7 +48,12 @@ def _build_text_output(project_tree, extension_summary, files_data, tree_only=Fa
     )
 
 
-def _build_xml_output(project_tree, extension_summary, files_data, tree_only=False):
+def _build_xml_output(
+    project_tree: str,
+    extension_summary: str,
+    files_data: list[ProcessedFile],
+    tree_only: bool = False,
+) -> str:
     directory_block = f"{project_tree}\n\n{extension_summary}"
     parts = [
         "<repository>",
@@ -52,9 +64,9 @@ def _build_xml_output(project_tree, extension_summary, files_data, tree_only=Fal
 
     if not tree_only:
         parts.append("<files>")
-        for relative_path, content in files_data:
-            parts.append(f'<file path="{escape(relative_path, quote=True)}">')
-            parts.append(escape(content))
+        for file_data in files_data:
+            parts.append(f'<file path="{escape(file_data.path, quote=True)}">')
+            parts.append(escape(file_data.content))
             parts.append("</file>")
         parts.append("</files>")
 
@@ -62,7 +74,12 @@ def _build_xml_output(project_tree, extension_summary, files_data, tree_only=Fal
     return "\n".join(parts)
 
 
-def _build_markdown_output(project_tree, extension_summary, files_data, tree_only=False):
+def _build_markdown_output(
+    project_tree: str,
+    extension_summary: str,
+    files_data: list[ProcessedFile],
+    tree_only: bool = False,
+) -> str:
     parts = [
         "# Project Context",
         "",
@@ -76,13 +93,13 @@ def _build_markdown_output(project_tree, extension_summary, files_data, tree_onl
 
     if not tree_only:
         parts.extend(["", "## Files", ""])
-        for relative_path, content in files_data:
-            language = _markdown_language_for_path(relative_path)
+        for file_data in files_data:
+            language = _markdown_language_for_path(file_data.path)
             parts.extend(
                 [
-                    f"### File: `{relative_path}`",
+                    f"### File: `{file_data.path}`",
                     f"```{language}",
-                    content,
+                    file_data.content,
                     "```",
                     "",
                 ]
@@ -91,7 +108,13 @@ def _build_markdown_output(project_tree, extension_summary, files_data, tree_onl
     return "\n".join(parts).rstrip() + "\n"
 
 
-def build_output(format_type, project_tree, extension_summary, files_data, tree_only=False):
+def build_output(
+    format_type: str,
+    project_tree: str,
+    extension_summary: str,
+    files_data: list[ProcessedFile],
+    tree_only: bool = False,
+) -> str:
     if format_type == 'text':
         return _build_text_output(project_tree, extension_summary, files_data, tree_only=tree_only)
     if format_type == 'xml':

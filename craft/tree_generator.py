@@ -1,7 +1,11 @@
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from craft.utils import format_bytes
+
+if TYPE_CHECKING:
+    from craft.filter_manager import FilterManager
 
 TREE_LEGEND = (
     "Légende : ● fichier concaténé dans le contenu ci-dessous ; "
@@ -15,19 +19,31 @@ SYMBOL_INDICATIVE = "○"
 NO_EXTENSION_LABEL = "(sans extension)"
 
 
-def build_tree_legend():
+def build_tree_legend() -> str:
     return TREE_LEGEND
 
 
-def _file_size(path):
+def _file_size(path: Path) -> int:
     try:
         return path.stat().st_size
     except OSError:
         return 0
 
 
-def _collect_tree_paths(directory, include_spec, exclude_spec, ignore_manager=None):
-    paths_for_tree = set()
+def _uses_filter_manager(filter_or_include_spec: object) -> bool:
+    return hasattr(filter_or_include_spec, "is_included") and hasattr(
+        filter_or_include_spec, "is_tree_excluded"
+    )
+
+
+def _collect_tree_paths(
+    directory: Path,
+    filter_or_include_spec: object,
+    exclude_spec: object | None = None,
+    ignore_manager=None,
+) -> set[Path]:
+    paths_for_tree: set[Path] = set()
+    use_filter_manager = _uses_filter_manager(filter_or_include_spec)
 
     for root, dirs, files in os.walk(directory, topdown=True):
         root_path = Path(root)
@@ -38,7 +54,12 @@ def _collect_tree_paths(directory, include_spec, exclude_spec, ignore_manager=No
             dir_path_str = str(dir_path.relative_to(directory)).replace('\\', '/')
             if ignore_manager and ignore_manager.is_ignored(dir_path):
                 excluded_dirs.append(d)
-            elif exclude_spec.match_file(dir_path_str) or exclude_spec.match_file(dir_path_str + '/'):
+            elif use_filter_manager:
+                if filter_or_include_spec.is_tree_excluded(dir_path_str, is_dir=True):
+                    excluded_dirs.append(d)
+            elif exclude_spec and (
+                exclude_spec.match_file(dir_path_str) or exclude_spec.match_file(dir_path_str + "/")
+            ):
                 excluded_dirs.append(d)
 
         for d in excluded_dirs:
@@ -49,10 +70,17 @@ def _collect_tree_paths(directory, include_spec, exclude_spec, ignore_manager=No
             if ignore_manager and ignore_manager.is_ignored(item_path):
                 continue
             relative_p_str = str(item_path.relative_to(directory)).replace('\\', '/')
-            if include_spec.match_file(relative_p_str) and not exclude_spec.match_file(relative_p_str):
+            if use_filter_manager:
+                is_included = filter_or_include_spec.is_included(relative_p_str)
+                is_excluded = filter_or_include_spec.is_tree_excluded(relative_p_str)
+            else:
+                is_included = filter_or_include_spec.match_file(relative_p_str)
+                is_excluded = bool(exclude_spec and exclude_spec.match_file(relative_p_str))
+
+            if is_included and not is_excluded:
                 paths_for_tree.add(item_path)
 
-    final_paths_for_tree = set(paths_for_tree)
+    final_paths_for_tree: set[Path] = set(paths_for_tree)
     for path in paths_for_tree:
         parent = path.parent
         while parent and parent != directory:
@@ -62,8 +90,12 @@ def _collect_tree_paths(directory, include_spec, exclude_spec, ignore_manager=No
     return final_paths_for_tree
 
 
-def _aggregate_dir_sizes(directory, paths, concatenated_paths):
-    file_metrics = {}
+def _aggregate_dir_sizes(
+    directory: Path,
+    paths: set[Path],
+    concatenated_paths: set[Path],
+) -> tuple[dict[Path, tuple[int, int]], dict[Path, tuple[int, int]]]:
+    file_metrics: dict[Path, tuple[int, int]] = {}
     dir_sizes = {p: [0, 0] for p in paths if p.is_dir()}
 
     for path in paths:
@@ -85,7 +117,7 @@ def _aggregate_dir_sizes(directory, paths, concatenated_paths):
     return file_metrics, {d: (v[0], v[1]) for d, v in dir_sizes.items()}
 
 
-def _format_dir_suffix(concat_size, real_size):
+def _format_dir_suffix(concat_size: int, real_size: int) -> str:
     if concat_size == 0 and real_size == 0:
         return ""
     if concat_size == real_size:
@@ -93,14 +125,14 @@ def _format_dir_suffix(concat_size, real_size):
     return f" — {format_bytes(concat_size)} (Total réel : {format_bytes(real_size)})"
 
 
-def _extension_key(path):
+def _extension_key(path: Path) -> str:
     suffix = path.suffix
     return suffix if suffix else NO_EXTENSION_LABEL
 
 
-def format_extension_summary(tree_file_paths, concatenated_paths):
-    concat_by_ext = {}
-    real_by_ext = {}
+def format_extension_summary(tree_file_paths: set[Path], concatenated_paths: set[Path]) -> str:
+    concat_by_ext: dict[str, int] = {}
+    real_by_ext: dict[str, int] = {}
 
     for path in tree_file_paths:
         if not path.is_file():
@@ -127,13 +159,31 @@ def format_extension_summary(tree_file_paths, concatenated_paths):
     return "\n".join(lines)
 
 
-def generate_tree(directory, include_spec, exclude_spec, concatenated_paths, ignore_manager=None):
-    concatenated_paths = set(concatenated_paths)
-    final_paths_for_tree = _collect_tree_paths(
-        directory, include_spec, exclude_spec, ignore_manager=ignore_manager
-    )
+def generate_tree(
+    directory: Path,
+    filter_or_include_spec: object,
+    exclude_spec_or_concatenated_paths: object,
+    concatenated_paths: set[Path] | None = None,
+    ignore_manager=None,
+) -> tuple[str, set[Path]]:
+    if concatenated_paths is None:
+        # Nouvelle signature : generate_tree(directory, filter_manager, concatenated_paths, ...)
+        concatenated_paths_set = set(exclude_spec_or_concatenated_paths)
+        final_paths_for_tree = _collect_tree_paths(
+            directory, filter_or_include_spec, ignore_manager=ignore_manager
+        )
+    else:
+        # Signature historique : generate_tree(directory, include_spec, exclude_spec, concatenated_paths, ...)
+        concatenated_paths_set = set(concatenated_paths)
+        final_paths_for_tree = _collect_tree_paths(
+            directory,
+            filter_or_include_spec,
+            exclude_spec_or_concatenated_paths,
+            ignore_manager=ignore_manager,
+        )
+
     file_metrics, dir_sizes = _aggregate_dir_sizes(
-        directory, final_paths_for_tree, concatenated_paths
+        directory, final_paths_for_tree, concatenated_paths_set
     )
 
     tree_lines = [build_tree_legend(), f"Arbre du projet : {directory.resolve()}"]
@@ -163,7 +213,7 @@ def generate_tree(directory, include_spec, exclude_spec, concatenated_paths, ign
             tree_lines.append(f"{indent}{connector}{path.name}/{suffix}")
         else:
             concat_size, real_size = file_metrics.get(path, (0, 0))
-            if path in concatenated_paths:
+            if path in concatenated_paths_set:
                 tree_lines.append(
                     f"{indent}{connector}{SYMBOL_CONCATENATED} {path.name} — {format_bytes(concat_size)}"
                 )
