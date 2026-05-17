@@ -17,7 +17,7 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$SCRIPT_DIR/.."
 TEST_PROJECTS_ROOT="$SCRIPT_DIR/test_projects"
-AICC_SCRIPT="$PROJECT_ROOT/aicc.py"
+AICC_SCRIPT="$PROJECT_ROOT/main.py"
 
 # Couleurs pour un affichage plus clair
 COLOR_BLUE='\033[0;34m'

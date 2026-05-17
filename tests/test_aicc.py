@@ -10,10 +10,10 @@ TESTS_DIR = Path(__file__).parent
 # On remonte d'un niveau pour avoir la racine du projet
 PROJECT_ROOT = TESTS_DIR.parent
 # Chemin vers le script principal
-AICC_SCRIPT = PROJECT_ROOT / 'aicc.py'
+AICC_SCRIPT = PROJECT_ROOT / 'main.py'
 
 def run_aicc(args, cwd=PROJECT_ROOT):
-    """Exécute le script aicc.py avec les arguments fournis via subprocess."""
+    """Exécute le script main.py avec les arguments fournis via subprocess."""
     command = [sys.executable, str(AICC_SCRIPT)] + args
     result = subprocess.run(
         command,

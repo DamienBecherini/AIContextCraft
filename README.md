@@ -55,11 +55,13 @@ Run the script from your terminal. By default, it looks for a `config.yaml` in t
 
 ```bash
 # Generate context for the current directory
-python aicc.py
+python main.py
 
 # Specify project and output paths
-python aicc.py -p /path/to/your/project -o /path/to/output/context.txt
+python main.py -p /path/to/your/project -o /path/to/output/context.txt
 ```
+
+`python aicc.py` remains supported as a compatibility alias (same behavior as `main.py`).
 
 #### Command-Line Options
 
@@ -81,7 +83,7 @@ python aicc.py -p /path/to/your/project -o /path/to/output/context.txt
 Generate a context for a Python project, removing all comments and respecting the `.gitignore` file:
 
 ```bash
-python aicc.py --project ./my-python-app --strip-comments --use-gitignore -v
+python main.py --project ./my-python-app --strip-comments --use-gitignore -v
 ```
 
 This will create a file in the `build/` directory containing the project tree and the cleaned content of all relevant files.
@@ -89,7 +91,7 @@ This will create a file in the `build/` directory containing the project tree an
 Generate a dedicated Markdown diff report (without running the standard concatenation flow):
 
 ```bash
-python aicc.py --project ./my-python-app --git-diff HEAD~1 HEAD --output ./build/git_diff_report.txt --no-timestamp
+python main.py --project ./my-python-app --git-diff HEAD~1 HEAD --output ./build/git_diff_report.txt --no-timestamp
 ```
 
 ## ⚙️ Configuration (`config.yaml`)
