@@ -1,5 +1,5 @@
 # Chemin par défaut pour le fichier de sortie.
-output_path: "./build/project_context.txt"
+output_path: "./build/concat-code.md"
 
 # --- SÉLECTION DES FICHIERS ---
 
