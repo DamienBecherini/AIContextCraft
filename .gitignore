@@ -248,8 +248,7 @@ site/
 # ─────────────────────────────────────────────────────────────────
 
 # Local configuration overrides (but keep examples)
-concat-config.local.yaml
-config.local.yaml
+config-concat-code.yaml
 
 # User-specific test configurations
 tests/test-config.local.yaml
@@ -277,6 +276,7 @@ context.txt
 # Keep example/template files
 !.env.example
 !concat-config.example.yaml
+!config-concat-code_sample.yaml
 !tests/test-project/**
 
 # Keep documentation

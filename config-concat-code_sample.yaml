@@ -1,0 +1,67 @@
+# Chemin par défaut pour le fichier de sortie.
+output_path: "./build/project_context.txt"
+
+# --- SÉLECTION DES FICHIERS ---
+
+# ÉTAPE 1: INCLUSION (prioritaire)
+# Seuls les fichiers et dossiers correspondant à ces patterns seront considérés.
+# Le pattern '**/*' signifie "tous les fichiers dans tous les sous-dossiers".
+# Exemples :
+#   - ['src/', 'tests/', 'README.md'] pour ne prendre que le contenu de 'src', 'tests' et le fichier README.
+#   - ['*.py', 'requirements.txt'] pour ne prendre que les fichiers Python et le fichier requirements.
+include_patterns:
+  - '**/*'
+  # - 'caprover_wp_manager/'
+
+# ÉTAPE 2: EXCLUSION
+# Parmi les fichiers inclus à l'étape 1, ceux qui correspondent à ces patterns
+# seront retirés.
+
+# Filtres communs : s'appliquent PARTOUT (arbre et contenu des fichiers).
+# Idéal pour exclure les dépendances, les builds, les caches, etc.
+common_filters:
+  - "*.pyc"
+  - ".git/"
+  - "dist/"
+  - "config-concat*"
+  - "*-lock.json"
+  - "*.map"
+  # # - "build/"
+  # - "build/concat-*"
+  # - "build/*.md"
+  # - "build/*.log"
+  # - "build/logs/"
+  - "*.mdc"
+  # - tests/
+  - docs/
+
+
+
+
+# Filtres spécifiques au contenu : N'exclut que du contenu des fichiers,
+# mais le fichier/dossier APPARAÎTRA dans l'arbre.
+project_only_filters:
+  - "*.jpg"
+  - "*.webp"
+  - "*.png"
+  - "*.svg"
+  - "*.woff2"
+  - ".woff"
+  - "jquery-ui.min.css"
+  - README.md
+  - LICENSE
+  - _githooks
+  - "config-concat*"
+
+
+
+
+# Filtres spécifiques à l'arbre : N'exclut que de l'affichage de l'arbre.
+# Le contenu de ces fichiers SERA INCLUS dans la sortie finale.
+tree_only_filters:
+  - ""
+  # - "*.md"
+  # - "LICENSE"
+  # - ".gitignore"
+  # - "config.yaml"
+
