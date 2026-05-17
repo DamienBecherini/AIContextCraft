@@ -10,6 +10,7 @@ import yaml
 
 from craft.file_processor import get_python_headers, strip_comments_from_code
 from craft.filter_manager import normalize_glob_patterns
+from craft.formatter import build_output
 from craft.git_manager import get_git_diff
 from craft.ignore_manager import IgnoreManager
 from craft.tree_generator import format_extension_summary, generate_tree
@@ -29,6 +30,7 @@ def main():
     parser.add_argument('--encoding', type=str, default='utf-8', help="Encodage des fichiers (défaut: utf-8).")
     parser.add_argument('--no-ignore', action='store_true', help="Désactive les .gitignore hiérarchiques (les règles de sécurité restent actives).")
     parser.add_argument('--git-diff', nargs=2, metavar=('REF_A', 'REF_B'), help="Mode spécial: génère un rapport Markdown du diff Git global entre deux révisions.")
+    parser.add_argument('--format', choices=['text', 'xml', 'markdown'], help="Format de sortie: text (défaut), xml ou markdown.")
     parser.add_argument('-v', '--verbose', action='store_true', help="Affiche des informations détaillées sur la console.")
     args = parser.parse_args()
 
@@ -38,7 +40,8 @@ def main():
         'common_filters': ['__pycache__/', '*.pyc', '.git/', '.venv/', 'venv/', 'node_modules/', 'build/', 'dist/', '.idea/', '.vscode/'],
         'project_only_filters': [],
         'tree_only_filters': ['*.md', 'LICENSE', '.gitignore', 'config.yaml'],
-        'full_body_filters': ['main', 'run_app', 'settings', 'configure_*']
+        'full_body_filters': ['main', 'run_app', 'settings', 'configure_*'],
+        'output_format': 'text',
     }
 
     config = DEFAULT_CONFIG.copy()
@@ -60,6 +63,10 @@ def main():
 
     project_path = Path(args.project or config.get('project_path', '.')).resolve()
     output_path_str = args.output or config.get('output_path')
+    output_format = args.format or config.get('output_format', 'text')
+    if output_format not in {'text', 'xml', 'markdown'}:
+        logging.warning(f"Format de sortie inconnu '{output_format}' dans la configuration. Fallback vers 'text'.")
+        output_format = 'text'
 
     output_path = Path(output_path_str)
     if not args.no_timestamp:
@@ -79,6 +86,10 @@ def main():
         logging.info(f"Configuration chargée et fusionnée depuis '{config_path}'")
 
     if args.git_diff:
+        if output_format != 'markdown':
+            logging.info(
+                f"Mode --git-diff: le format '{output_format}' est ignoré, sortie Markdown forcée."
+            )
         ref_a, ref_b = args.git_diff
         logging.info(f"Mode --git-diff activé: calcul du diff entre '{ref_a}' et '{ref_b}'")
         try:
@@ -163,7 +174,7 @@ def main():
     logging.info("="*50)
 
     print("Concaténation des fichiers...")
-    all_files_content = []
+    files_data = []
 
     logging.info("Recherche optimisée des fichiers (avec élagage des dossiers exclus)...")
     final_file_list = []
@@ -207,7 +218,7 @@ def main():
 
     if not args.tree_only:
         for file_path in final_file_list:
-            relative_path_str = str(file_path.relative_to(project_path))
+            relative_path_str = str(file_path.relative_to(project_path)).replace('\\', '/')
             try:
                 with open(file_path, 'r', encoding=args.encoding, errors='ignore') as f:
                     content = f.read()
@@ -218,21 +229,28 @@ def main():
                 elif args.strip_comments:
                     content = strip_comments_from_code(content, file_path)
 
-                header = f"\n{'='*80}\n--- FICHIER: {relative_path_str}\n{'='*80}\n\n"
-                all_files_content.append(header + content)
+                files_data.append((relative_path_str, content))
             except IOError as e:
                 logging.error(f"  -> ERREUR: Impossible de lire {relative_path_str}. Erreur: {e}")
 
         logging.info("Assemblage du fichier de sortie...")
-        body_content_str = "".join(all_files_content)
-        full_body = (
-            project_tree + "\n\n" + extension_summary + "\n\n"
-            + "-" * 80 + "\nCONTENU DES FICHIERS\n" + "-" * 80 + "\n\n" + body_content_str
+        full_body = build_output(
+            output_format,
+            project_tree,
+            extension_summary,
+            files_data,
+            tree_only=False,
         )
         stats = get_file_stats(full_body, args.encoding)
     else:
         logging.info("Mode --tree-only activé : saut de la lecture du contenu des fichiers.")
-        full_body = project_tree + "\n\n" + extension_summary
+        full_body = build_output(
+            output_format,
+            project_tree,
+            extension_summary,
+            files_data,
+            tree_only=True,
+        )
         stats = "N/A (Mode arbre uniquement)"
 
     final_output_str = "".join([

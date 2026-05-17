@@ -290,3 +290,121 @@ def test_git_diff_mode_with_invalid_ref_fails(tmp_path):
 
     assert result.returncode != 0
     assert "not-a-valid-ref" in result.stderr
+
+
+def test_xml_format_output_structure(tmp_path):
+    """Valide la structure de sortie XML en mode concaténation standard."""
+    test_project_path = TESTS_DIR / 'test_projects' / 'basic_project'
+    output_file = tmp_path / 'output.xml'
+
+    args = [
+        '--project', str(test_project_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--config', str(test_project_path / 'config.yaml'),
+        '--format', 'xml',
+    ]
+
+    result = run_aicc(args)
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    content = output_file.read_text(encoding='utf-8')
+    assert '<repository>' in content
+    assert '<directory_structure>' in content
+    assert '<files>' in content
+    assert '<file path="app/main.py">' in content
+    assert '</repository>' in content
+
+
+def test_markdown_format_output_structure(tmp_path):
+    """Valide la structure de sortie Markdown en mode concaténation standard."""
+    test_project_path = TESTS_DIR / 'test_projects' / 'basic_project'
+    output_file = tmp_path / 'output.md'
+
+    args = [
+        '--project', str(test_project_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--config', str(test_project_path / 'config.yaml'),
+        '--format', 'markdown',
+    ]
+
+    result = run_aicc(args)
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    content = output_file.read_text(encoding='utf-8')
+    assert '# Project Context' in content
+    assert '## Directory Structure' in content
+    assert '## Files' in content
+    assert '### File: `app/main.py`' in content
+    assert '```python' in content
+
+
+def test_tree_only_xml_omits_files_section(tmp_path):
+    """Valide que --tree-only en XML ne génère pas la section <files>."""
+    test_project_path = TESTS_DIR / 'test_projects' / 'basic_project'
+    output_file = tmp_path / 'tree_only.xml'
+
+    args = [
+        '--project', str(test_project_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--config', str(test_project_path / 'config.yaml'),
+        '--format', 'xml',
+        '--tree-only',
+    ]
+
+    result = run_aicc(args)
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    content = output_file.read_text(encoding='utf-8')
+    assert '<repository>' in content
+    assert '<directory_structure>' in content
+    assert '<files>' not in content
+
+
+def test_tree_only_markdown_omits_files_section(tmp_path):
+    """Valide que --tree-only en Markdown ne génère pas la section fichiers."""
+    test_project_path = TESTS_DIR / 'test_projects' / 'basic_project'
+    output_file = tmp_path / 'tree_only.md'
+
+    args = [
+        '--project', str(test_project_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--config', str(test_project_path / 'config.yaml'),
+        '--format', 'markdown',
+        '--tree-only',
+    ]
+
+    result = run_aicc(args)
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    content = output_file.read_text(encoding='utf-8')
+    assert '# Project Context' in content
+    assert '## Directory Structure' in content
+    assert '## Files' not in content
+    assert '### File:' not in content
+
+
+def test_xml_format_escapes_file_content(tmp_path):
+    """Valide l'échappement XML du contenu des fichiers concaténés."""
+    project_path = tmp_path / 'xml_escape_project'
+    project_path.mkdir()
+    target_file = project_path / 'snippet.txt'
+    target_file.write_text('<tag>&value</tag>\n', encoding='utf-8')
+
+    output_file = tmp_path / 'escaped_output.xml'
+    args = [
+        '--project', str(project_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--format', 'xml',
+    ]
+
+    result = run_aicc(args)
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    content = output_file.read_text(encoding='utf-8')
+    assert '&lt;tag&gt;&amp;value&lt;/tag&gt;' in content
+    assert '<tag>&value</tag>' not in content

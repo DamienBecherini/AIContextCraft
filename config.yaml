@@ -1,6 +1,9 @@
 # Chemin par défaut pour le fichier de sortie.
 output_path: "./build/project_context.txt"
 
+# Format de sortie principal: text (défaut), xml, markdown.
+output_format: "text"
+
 # --- SÉLECTION DES FICHIERS ---
 
 # ÉTAPE 1: INCLUSION (prioritaire)
