@@ -1,126 +1,65 @@
-# **AI Context Craft : Document d'Évolution et Roadmap**
+# 🗺️ AI Context Craft : Roadmap
 
-## 1. Vision et Mission
-
-**Vision :** Un outil à la fois simple et puissant pour les développeurs qui préparent des bases de code pour une analyse par des Grands Modèles de Langage (LLM).
-
-**Mission :** Offrir un contrôle granulaire, une performance élevée et des fonctionnalités intelligentes pour créer le contexte le plus pertinent et concis possible, optimisant ainsi l'efficacité des interactions avec l'IA.
-
-## 2. État Actuel (v1.0 - Baseline)
-
-*   **Gestion de la Configuration :** Configuration complète via un fichier `config.yaml`.
-*   **Filtrage à Deux Étapes :** Logique puissante d'inclusion prioritaire (`include_patterns`) suivie par une exclusion (`common_filters`, etc.).
-*   **Traitement de Code Python Avancé :**
-    *   Suppression des commentaires et docstrings basée sur l'AST, garantissant une grande fiabilité (`--strip-comments`).
-    *   Extraction des en-têtes et docstrings pour un contexte de haut niveau (`--headers-only`).
-*   **Génération d'Arborescence :** Visualisation claire de la structure du projet, respectant les filtres.
-*   **Utilitaires :** Logging, gestion des timestamps, calcul de statistiques (taille, tokens), et support du `.gitignore`.
-
-## 3. Architecture Cible (v2.0 - Le Refactoring)
-
-L'objectif principal est de passer d'un script monolithique à une architecture modulaire pour garantir la maintenabilité, la testabilité et l'évolutivité du projet.
-
-#### Structure de Projet Proposée :
-
-```
-ai-context-craft/
-├── main.py                  # Point d'entrée, orchestrateur principal
-├── config.yaml              # Fichier de configuration
-|
-└── craft/                   # Package contenant la logique métier
-    ├── __init__.py
-    ├── config_manager.py    # Chargement, validation et fusion de la configuration.
-    ├── file_processor.py    # Fonctions de traitement de contenu (strip_comments, get_headers).
-    ├── filter_manager.py    # Logique d'assemblage des patterns d'inclusion/exclusion.
-    ├── tree_generator.py    # Logique de génération de l'arborescence.
-    └── utils.py             # Fonctions utilitaires transverses (logging, stats, etc.).
-```
-
-#### Bénéfices :
-
-*   **Principe de Responsabilité Unique :** Chaque module a un rôle clair.
-*   **Facilité de Test :** Permet d'écrire des tests unitaires pour chaque composant isolé.
-*   **Lisibilité :** `main.py` devient un flux de travail de haut niveau, facile à comprendre.
+## 1. Vision et Objectif
+**Vision :** Un outil CLI personnel, robuste et pragmatique pour préparer des bases de code avant de les envoyer à un LLM.
+**Objectif :** Obtenir un contexte IA ultra-pertinent en combinant un filtrage drastique et une extraction intelligente (Périmètre + Zoom), sans s'encombrer de fonctionnalités gadgets.
 
 ---
 
-## 4. Backlog des Fonctionnalités
-
-### Catégorie A : Expérience Utilisateur & Améliorations de Base
-
-1.  **A1. Barre de Progression : ✅ TERMINÉ**
-    *   **Quoi :** Afficher une barre de progression (`rich`) lors de la concaténation des fichiers.
-    *   **Pourquoi :** Fournir un retour visuel sur les projets volumineux et améliorer l'expérience utilisateur.
-
-2.  **A2. Copie vers le Presse-papiers : ✅ TERMINÉ**
-    *   **Quoi :** Ajouter une option `--clipboard` (`-cb`) pour copier la sortie directement dans le presse-papiers.
-    *   **Pourquoi :** Fluidifier radicalement le workflow de l'utilisateur (Générer -> Coller), y compris via SSH (OSC 52).
-
-3.  **A3. Gestion Robuste des Encodages :**
-    *   **Quoi :** Remplacer `errors='ignore'` par une détection d'encodage (ex: `chardet`) ou, à défaut, logger un avertissement clair en cas d'échec de décodage.
-    *   **Pourquoi :** Augmenter la fiabilité sur des projets hétérogènes.
-
-4.  **A4. Formats de sortie LLM-Optimized : ✅ TERMINÉ**
-    *   **Quoi :** Ajouter `--format {text,xml,markdown}` avec un rendu XML structuré pour les workflows IA.
-    *   **Pourquoi :** Produire un contexte mieux structuré et directement exploitable par les LLMs.
-
-### Catégorie B : Extension des Capacités
-
-1.  **B1. Support Multi-langage pour le `strip-comments` :**
-    *   **Quoi :** Étendre la fonction `strip_comments_from_code` pour gérer les commentaires `//`, `/* ... */` (JS, TS, Java, C++, CSS) et `<!-- ... -->` (HTML/XML).
-    *   **Pourquoi :** Rendre l'outil universel et indispensable pour tout type de projet.
-
-2.  **B2. Profils de Configuration :**
-    *   **Quoi :** Permettre de définir des profils nommés dans `config.yaml` (ex: `frontend`, `backend`) que l'on peut activer via une option CLI (`--profile frontend`). Chaque profil aurait ses propres `include_patterns`.
-    *   **Pourquoi :** Simplifier l'utilisation sur des monorepos ou des projets full-stack.
-
-3.  **B3. Fractionnement Automatique de la Sortie :**
-    *   **Quoi :** Ajouter une option `--max-tokens <N>` qui divise la sortie en plusieurs fichiers numérotés si le contexte dépasse N tokens.
-    *   **Pourquoi :** Gérer les projets trop grands pour la fenêtre de contexte d'un LLM.
-
-### Catégorie C : Contexte "Intelligent" & Intégration Git
-
-1.  **C1. Intégration Git `diff` : 🔄 PARTIELLEMENT TERMINÉ**
-    *   **Quoi :** Option `--git-diff <ref_a> <ref_b>` pour générer un rapport Markdown du diff Git global entre deux révisions.
-    *   **Pourquoi :** **Fonctionnalité majeure.** Idéale pour les revues de code, la génération de descriptions de Pull Request ou le débuggage de nouvelles fonctionnalités.
-
-2.  **C2. Priorisation Intelligente des Tokens :**
-    *   **Quoi :** En conjonction avec `--max-tokens`, développer une logique qui, pour rester sous la limite, passe automatiquement certains fichiers en mode `--headers-only` en se basant sur des heuristiques (ex: fichiers les moins récemment modifiés, fichiers dans `tests/`).
-    *   **Pourquoi :** Produire le meilleur contexte possible sous une contrainte de taille.
+## 2. État Actuel (Version Stable - Phase 1)
+* **Filtrage hiérarchique :** Respect de `.gitignore`, `.dockerignore`, etc.
+* **Sécurité :** Exclusion forcée des secrets (`.env`, `*.pem`) et fallback d'encodage.
+* **Plug & Play :** Zero-config, presse-papiers automatique (-cb), formats XML/Markdown.
+* **Git-Diff :** Rapport Markdown des différences entre deux branches.
 
 ---
 
-## 5. Roadmap Évolutive
+## 3. 🚀 Prochaine Étape : Phase 2 - L'Extraction Universelle (Tree-sitter)
+Actuellement, l'optimisation (`--strip-comments` et `--headers-only`) ne gère que Python (via l'AST natif). Le but est de l'étendre aux langages du quotidien (JS, TS, Rust, Go, C++, etc.) de manière robuste.
 
-### **Phase 0 : Fondation - Le Grand Refactoring (Prérequis) — ✅ TERMINÉE**
+1. **Intégration de `tree-sitter` :**
+   * Remplacer l'AST Python par le parseur universel `tree-sitter`.
+   * Permettre la suppression fiable des commentaires pour les langages majeurs.
+2. **Le "Repo Map" Universel :**
+   * Rendre l'option `--headers-only` compatible multi-langage pour générer une "carte" compacte du projet (uniquement les signatures de fonctions/classes).
 
-*   **Objectif :** Établir une base de code saine pour l'avenir.
-*   **Tâches :**
-    1.  Créer la nouvelle structure de dossiers (`craft/`).
-    2.  Migrer la logique existante dans les modules dédiés (`config_manager.py`, `file_processor.py`, etc.).
-    3.  Adapter `main.py` pour qu'il agisse en tant qu'orchestrateur.
-    4.  S'assurer que toutes les fonctionnalités existantes fonctionnent parfaitement après le refactoring.
+---
 
-### **Phase 1 : L'Expérience "Pro" (Améliorations UX) — ✅ TERMINÉE**
+## 4. 🧠 Phase 3 - Le Filtrage "Focus" (Le modèle Cursor)
+Combiner le "Périmètre" (YAML Config) et le "Zoom" (Focus) pour envoyer à l'IA la carte globale du projet, mais avec le code complet uniquement sur les fichiers pertinents.
 
-*   **Objectif :** Rendre l'outil plus agréable et plus rapide à utiliser au quotidien.
-*   **Tâches réalisées :**
-    1.  Implémenter la barre de progression (**A1**, via `rich`).
-    2.  Implémenter la copie vers le presse-papiers (**A2**, avec support OSC 52 en SSH).
-    3.  Ajouter les formats LLM-Optimized (**A4**, `--format text|xml|markdown`).
+1. **Le Focus Git (`--focus-git`) :**
+   * À l'intérieur du périmètre autorisé, inclure le code complet *uniquement* pour les fichiers modifiés localement (ou staged).
+   * Rétrograder automatiquement le reste du projet en mode `--headers-only` (Repo Map).
+2. **Le Focus Sémantique / Grep (`--focus "keyword"`) :**
+   * Extraire le code complet des fichiers qui matchent un mot-clé précis, et garder le reste en Repo Map.
 
-### **Phase 2 : L'Outil Universel (Extension des capacités) — 🚀 PROCHAINE PRIORITÉ**
+---
 
-*   **Objectif :** Faire de l'outil un compagnon indispensable pour tous types de projets.
-*   **Tâches :**
-    1.  Remplacer l'analyseur Python AST par **`tree-sitter`** pour débloquer une base multi-langage robuste.
-    2.  Ajouter le support multi-langage pour la suppression des commentaires (**B1**: JS/TS/Rust/C++/etc.).
-    3.  Introduire le fractionnement automatique de la sortie par tokens (**B3**, `--max-tokens`).
-    4.  Mettre en place le système de profils de configuration (**B2**) pour les projets complexes.
+## 5. 💡 Le Labo (Boîte à Idées & Explorations)
+*Une liste d'idées et de concepts à explorer pour l'avenir.*
 
-### **Phase 3 : Le Saut vers l'Intelligence (Intégration Git) — 🔄 EN COURS (PARTIEL)**
+* **L'Agent d'Investigation (Focus IA) :** Connecter l'outil à une API IA low-cost (ou locale via Ollama) pour qu'elle lise la "carte du projet" (Repo Map) et trouve d'elle-même les fichiers pertinents pour résoudre un ticket, automatisant ainsi le filtrage de manière "pseudo-intelligente".
+* **Le Chasseur de Dépendances (Imports Crawler) :** Si un fichier est ciblé par le Focus, analyser ses `import` pour inclure automatiquement le code des fichiers dont il dépend pour fonctionner.
+* **Support Multimodal (Vision) :** Détecter les images (PNG, SVG, JPG) et les encoder en Base64 dans le XML pour que les modèles multimodaux (Claude 3.5, GPT-4o) puissent "voir" les maquettes UI ou les diagrammes d'architecture.
+* **Optimisation "Prompt Caching" :** Structurer le document XML pour placer le contexte statique en haut et le contexte dynamique (fichiers modifiés) en bas, afin de maximiser les hits de cache sur les API Anthropic/OpenAI.
+* **Découverte Automatique des Tests :** Lors d'un Focus sur un fichier source, détecter et inclure automatiquement le fichier de tests unitaires associé (`test_*.py`, `*.spec.js`).
+* **Secret Scanning (Redaction) :** Scanner activement le contenu des fichiers pour détecter et masquer (ex: `[REDACTED]`) les clés API AWS/Stripe oubliées dans le code avant la copie.
+* **Templates de Prompts :** Permettre d'englober le contexte généré directement à l'intérieur d'une consigne pré-définie (ex: `--template code-review`).
+* **Smart Minification :** Résumer intelligemment les lockfiles (`package-lock.json`) en une simple liste de dépendances pour économiser des milliers de tokens.
+* **Ingestion Distante :** Remplacer le chemin local par une URL GitHub pour analyser un dépôt à la volée.
 
-*   **Objectif :** Transformer l'outil d'un simple "concaténateur" à un véritable "assistant de contexte".
-*   **Tâches :**
-    1.  Consolider et enrichir l'intégration `git diff` (**C1**) déjà disponible.
-    2.  (Optionnel) Commencer à explorer la priorisation intelligente des tokens (**C2**).
+---
+
+## 6. ✅ Historique (Archives)
+
+### Phase 1 : Expérience Utilisateur (Terminée)
+* Barre de progression console via `rich`.
+* Gestion intelligente du presse-papiers (limite de taille, `-cb`, fallback SSH).
+* Formats de sortie LLM (XML par défaut, Markdown).
+* Logique "Plug & Play" (configuration auto-détectée, sortie `build/`).
+
+### Phase 0 : Refactoring et Fondation (Terminée)
+* Découpage du script monolithique en modules dédiés (`craft/`).
+* Mise en place de tests automatisés (+30) pour éviter les régressions.
+* Documentation d'architecture as-code (Modèle C4, séquences Mermaid).
