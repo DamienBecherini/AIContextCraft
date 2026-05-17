@@ -11,6 +11,7 @@ from craft.filter_manager import FilterManager
 from craft.ignore_manager import IgnoreManager
 from craft.tree_generator import format_extension_summary, generate_tree
 from craft.types import ProcessedFile
+from craft.utils import read_file_with_fallback
 
 
 class ContextBuilder:
@@ -70,8 +71,7 @@ class ContextBuilder:
         for file_path in file_iterator:
             relative_path_str = str(file_path.relative_to(self.project_path)).replace('\\', '/')
             try:
-                with open(file_path, 'r', encoding=self.encoding, errors='ignore') as f:
-                    content = f.read()
+                content = read_file_with_fallback(file_path, self.encoding)
 
                 if self.args.headers_only and file_path.suffix == '.py':
                     content = get_python_headers(content, self.full_body_filters)

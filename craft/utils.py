@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 from rich.console import Console
 from rich.logging import RichHandler
@@ -66,3 +67,38 @@ def get_file_stats(content_str, encoding='utf-8'):
             logging.error(f"Erreur Tiktoken : {e}")
             tokens = "Erreur"
     return f"Taille: {formatted_size} ({total_bytes:,} octets), Tokens (estim.): {tokens}"
+
+
+def read_file_with_fallback(file_path: Path, default_encoding: str = "utf-8") -> str:
+    """Lit un fichier texte avec détection d'encodage en fallback."""
+    try:
+        with open(file_path, "r", encoding=default_encoding, errors="strict") as f:
+            return f.read()
+    except UnicodeDecodeError:
+        try:
+            from charset_normalizer import from_path
+
+            match = from_path(file_path).best()
+            if match is not None:
+                detected_encoding = match.encoding or "unknown"
+                logging.info(
+                    "Encodage %s détecté pour %s (fallback après échec %s).",
+                    detected_encoding,
+                    file_path,
+                    default_encoding,
+                )
+                return str(match)
+        except Exception as exc:  # pragma: no cover - garde-fou défensif
+            logging.warning(
+                "Détection d'encodage échouée pour %s: %s. Fallback errors='replace'.",
+                file_path,
+                exc,
+            )
+
+        logging.warning(
+            "Aucun encodage fiable détecté pour %s. Lecture avec %s + errors='replace'.",
+            file_path,
+            default_encoding,
+        )
+        with open(file_path, "r", encoding=default_encoding, errors="replace") as f:
+            return f.read()

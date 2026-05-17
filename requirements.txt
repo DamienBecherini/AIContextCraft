@@ -4,3 +4,4 @@ pathspec
 pytest
 rich
 pyperclip
+charset-normalizer
