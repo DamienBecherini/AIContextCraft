@@ -1,0 +1,96 @@
+@startuml
+title <size:24>Processing Flow View - Standard Context Mode</size>
+
+set separator none
+left to right direction
+skinparam ranksep 20
+skinparam nodesep 5
+hide stereotype
+
+<style>
+  root {
+    BackgroundColor: #ffffff;
+    FontColor: #444444;
+  }
+  // Element,Container
+  .Element-RWxlbWVudCxDb250YWluZXI= {
+    BackgroundColor: #438dd5;
+    LineColor: #2e6295;
+    LineStyle: 0;
+    LineThickness: 2;
+    FontColor: #ffffff;
+    FontSize: 24;
+    HorizontalAlignment: center;
+    Shadowing: 0;
+    MaximumWidth: 450;
+  }
+  // Element,Person
+  .Element-RWxlbWVudCxQZXJzb24= {
+    BackgroundColor: #08427b;
+    LineColor: #052e56;
+    LineStyle: 0;
+    LineThickness: 2;
+    FontColor: #ffffff;
+    FontSize: 24;
+    HorizontalAlignment: center;
+    Shadowing: 0;
+    MaximumWidth: 450;
+  }
+  // Element,Software System
+  .Element-RWxlbWVudCxTb2Z0d2FyZSBTeXN0ZW0= {
+    BackgroundColor: #1168bd;
+    LineColor: #0b4884;
+    LineStyle: 0;
+    LineThickness: 2;
+    FontColor: #ffffff;
+    FontSize: 24;
+    HorizontalAlignment: center;
+    Shadowing: 0;
+    MaximumWidth: 450;
+  }
+  // Relationship
+  .Relationship-UmVsYXRpb25zaGlw {
+    LineThickness: 2;
+    LineStyle: 10-10;
+    LineColor: #444444;
+    FontColor: #444444;
+    FontSize: 24;
+    MaximumWidth: 200;
+  }
+  // AIContextCraft
+  .Boundary-QUlDb250ZXh0Q3JhZnQ= {
+    BackgroundColor: #ffffff;
+    LineColor: #0b4884;
+    LineStyle: 0;
+    LineThickness: 2;
+    FontColor: #ffffff;
+    FontSize: 24;
+    HorizontalAlignment: center;
+    Shadowing: 0;
+  }
+</style>
+
+person "==Developer\n<size:16>[Person]</size>\n\nRuns AIContextCraft from local terminal or CI." <<Element-RWxlbWVudCxQZXJzb24=>> as Developer
+rectangle "==Target Repository\n<size:16>[Software System]</size>\n\nCodebase scanned and filtered to produce LLM-ready context." <<Element-RWxlbWVudCxTb2Z0d2FyZSBTeXN0ZW0=>> as TargetRepository
+rectangle "==System Clipboard\n<size:16>[Software System]</size>\n\nReceives generated content when clipboard copy is enabled." <<Element-RWxlbWVudCxTb2Z0d2FyZSBTeXN0ZW0=>> as SystemClipboard
+rectangle "==Output Filesystem\n<size:16>[Software System]</size>\n\nStores generated context files and logs." <<Element-RWxlbWVudCxTb2Z0d2FyZSBTeXN0ZW0=>> as OutputFilesystem
+
+rectangle "AIContextCraft\n<size:16>[Software System]</size>" <<Boundary-QUlDb250ZXh0Q3JhZnQ=>> {
+  rectangle "==Context Builder Pipeline\n<size:16>[Container: Python (ContextBuilder)]</size>\n\nScans files, builds tree metadata, processes content, and aggregates sections." <<Element-RWxlbWVudCxDb250YWluZXI=>> as AIContextCraft.ContextBuilderPipeline
+  rectangle "==Output Formatter\n<size:16>[Container: Python (formatter.py)]</size>\n\nRenders final output as xml/text/markdown." <<Element-RWxlbWVudCxDb250YWluZXI=>> as AIContextCraft.OutputFormatter
+  rectangle "==Output and Clipboard Layer\n<size:16>[Container: Filesystem + pyperclip/OSC52]</size>\n\nWrites files/logs and optionally copies result to clipboard." <<Element-RWxlbWVudCxDb250YWluZXI=>> as AIContextCraft.OutputandClipboardLayer
+  rectangle "==CLI Entrypoint\n<size:16>[Container: Python (main.py)]</size>\n\nParses CLI flags, resolves config, orchestrates execution mode." <<Element-RWxlbWVudCxDb250YWluZXI=>> as AIContextCraft.CLIEntrypoint
+  rectangle "==Filtering and Ignore Engine\n<size:16>[Container: Python (FilterManager + IgnoreManager)]</size>\n\nApplies include/exclude filters and hierarchical ignore rules." <<Element-RWxlbWVudCxDb250YWluZXI=>> as AIContextCraft.FilteringandIgnoreEngine
+}
+
+Developer --> AIContextCraft.CLIEntrypoint <<Relationship-UmVsYXRpb25zaGlw>> : "Invokes main CLI"
+AIContextCraft.CLIEntrypoint --> AIContextCraft.FilteringandIgnoreEngine <<Relationship-UmVsYXRpb25zaGlw>> : "Builds filtering strategy"
+AIContextCraft.CLIEntrypoint --> AIContextCraft.ContextBuilderPipeline <<Relationship-UmVsYXRpb25zaGlw>> : "Triggers standard context mode"
+AIContextCraft.ContextBuilderPipeline --> AIContextCraft.FilteringandIgnoreEngine <<Relationship-UmVsYXRpb25zaGlw>> : "Queries include/exclude and ignore decisions"
+AIContextCraft.ContextBuilderPipeline --> TargetRepository <<Relationship-UmVsYXRpb25zaGlw>> : "Reads candidate files"
+AIContextCraft.ContextBuilderPipeline --> AIContextCraft.OutputFormatter <<Relationship-UmVsYXRpb25zaGlw>> : "Builds formatted output body"
+AIContextCraft.OutputFormatter --> AIContextCraft.OutputandClipboardLayer <<Relationship-UmVsYXRpb25zaGlw>> : "Sends formatted content"
+AIContextCraft.OutputandClipboardLayer --> OutputFilesystem <<Relationship-UmVsYXRpb25zaGlw>> : "Writes output artifacts"
+AIContextCraft.OutputandClipboardLayer --> SystemClipboard <<Relationship-UmVsYXRpb25zaGlw>> : "Copies content when allowed"
+
+@enduml

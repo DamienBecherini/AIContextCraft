@@ -1,0 +1,43 @@
+---
+description: Require explicit approval before functional Docker/test commands and diagnose agent-vs-user context mismatches
+alwaysApply: true
+---
+
+# Functional Command Approval and Docker Context
+
+Before running functional commands (Docker, full test runs, migrations, deploy scripts, network-impacting commands), the agent must ask for explicit permission.
+
+## Approval workflow (mandatory)
+
+1. Show the exact command(s) to run.
+2. Explain purpose and side effects.
+3. Ask explicit confirmation.
+4. Run commands only after user confirmation.
+
+Read-only exploration commands remain allowed without approval.
+
+For Docker-dependent functional commands executed by the agent:
+
+5. If sandboxed execution fails with Docker socket/daemon access errors, ask confirmation to rerun with elevated permissions.
+6. After confirmation, run using non-sandbox context (tool permission escalation) and report that the command was retried in functional context.
+
+## Docker test/debug diagnosis workflow
+
+When Docker-related commands fail, do not conclude global Docker outage before context checks:
+
+1. Distinguish execution context:
+   - agent/sandbox context
+   - user interactive shell context
+2. Validate in this order:
+   - `docker info`
+   - `docker ps`
+   - optional: `docker run --rm hello-world`
+3. If agent fails but user shell succeeds, classify as environment/context mismatch (permissions, sandbox, socket, env), not product bug.
+
+## Reporting policy
+
+- State clearly where failure occurred (agent vs user shell).
+- Avoid code fixes until environment mismatch is ruled out.
+- Provide exact rerun command(s) for user-side validation.
+- For script failures (`scripts/...`), request Docker validation commands first, then continue with the validated context.
+- When escalation is used, mention the exact command rerun and the resulting exit status.

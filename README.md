@@ -178,6 +178,19 @@ Generate XML output optimized for LLM ingestion and increase clipboard limit for
 python main.py --project ./my-python-app --format xml --clipboard-limit 25
 ```
 
+## 🧭 Architecture Documentation
+
+AIContextCraft architecture is documented in diagrams-as-code form (C4 + sequence diagrams):
+
+- Architecture guide: [`docs/architecture/README.md`](docs/architecture/README.md)
+- C4 source model: [`docs/architecture/structurizr/workspace.dsl`](docs/architecture/structurizr/workspace.dsl)
+
+Regenerate all architecture artifacts (Structurizr export, Mermaid validation, SVG assets):
+
+```bash
+./scripts/architecture/generate-all.sh
+```
+
 ## ⚙️ Configuration (`config.yaml`)
 
 The real power of **AI Context Craft** lies in its configuration. Configuration files are optional and auto-detected in this order inside the target project: `.aicc.yaml`, `aicc.yaml`, `aicc.yml`, `config-concat-code.yaml`. If none is found, Zero-Config mode is used without creating files on disk.
