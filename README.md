@@ -5,6 +5,7 @@
   <p><strong>The essential CLI tool for intelligently packaging your codebase for Large Language Models.</strong></p>
   
   <p>
+    <a href="https://github.com/DamienBecherini/AIContextCraft"><img src="https://img.shields.io/badge/GitHub-AIContextCraft-181717?logo=github" alt="GitHub"></a>
     <a href="https://creativecommons.org/publicdomain/zero/1.0/"><img src="https://img.shields.io/badge/license-CC0_1.0-blue.svg" alt="License"></a>
     <a href="#"><img src="https://img.shields.io/badge/python-3.8+-green.svg" alt="Python Version"></a>
     <a href="#"><img src="https://img.shields.io/badge/status-active-brightgreen" alt="Status"></a>
@@ -56,8 +57,8 @@ Currently, you can run the script directly by cloning the repository.
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/ai-context-craft.git
-cd ai-context-craft
+git clone https://github.com/DamienBecherini/AIContextCraft.git
+cd AIContextCraft
  
 # (Recommended) Create and activate a virtual environment
 python -m venv .aicc_venv
