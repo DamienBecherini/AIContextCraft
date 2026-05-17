@@ -1,11 +1,11 @@
 ---
-description: Ask to add plan copy and timestamp step
+description: Pre and Post Plan Publication Policy
 alwaysApply: true
 ---
 
 # Plan Publication Policy
 
-Scope note: this rule applies only when the active workspace is `AIContextCraft` (`/opt/AIContextCraft`). Do not apply `wp-manager`-specific test procedures here.
+Scope note: this rule applies only when the active workspace is `AIContextCraft` (`/opt/AIContextCraft`).
 
 Before generating any implementation plan, ask the user this explicit question:
 
@@ -46,32 +46,34 @@ If the user answers no:
 
 ## Commit Message Proposal (after report question)
 
-After asking whether the implementation report should be saved to the plan file, always provide a commit message proposal.
+After asking whether the implementation report should be saved to the plan file, always provide a commit message proposal following **Git Commit Best Practices (Conventional Commits)**.
 
 Requirements:
 
 - Generate a commit message proposal even if the user answers no to report persistence.
-- Include the plan filename in the commit header (subject line).
-- Keep the proposal concise and focused on why the change was made.
-
-Recommended format:
-
-- Header: `<type>(<plan-filename>): <short purpose>`
-- Body: 1-2 short sentences with key intent.
+- Format the subject line as: `<type>(<scope>): <subject>` (valid types: feat, fix, docs, style, refactor, test, chore).
+- Use the imperative mood in the subject line (e.g., "add feature", not "added feature" or "adds feature").
+- Include the plan filename in the commit header (subject line) or at the end of the body.
+- Provide a concise body explaining *what* was changed and *why*.
 
 ## Unit Test Procedure (mandatory after implementation)
 
-When a task includes Python code changes in `AIContextCraft`, run tests with a local pytest workflow (no Docker build step):
+When a task includes Python code changes in `AIContextCraft`, run tests using the project's local virtual environment (`.aicc_venv`):
 
-1. Run tests with `pytest` from the project root:
- - Full suite: `python -m pytest tests`
- - Targeted run: `python -m pytest tests/test_file.py`
- - Rerun failed: `python -m pytest --lf`
-2. Report test evidence in chat:
+1. **Environment Setup:**
+ - Check if the `.aicc_venv` directory exists in the project root.
+ - If it does NOT exist: Create it (`python -m venv .aicc_venv`), activate it, and install dependencies (`pip install -r requirements.txt`).
+ - If it exists: Ensure it is used for the following test execution.
+
+2. **Run Tests:** Execute `pytest` from the project root using the virtual environment (e.g., via `.aicc_venv/bin/python` or `.aicc_venv/Scripts/python` on Windows):
+ - Full suite: `<venv-python> -m pytest tests`
+ - Targeted run: `<venv-python> -m pytest tests/test_file.py`
+ - Rerun failed: `<venv-python> -m pytest --lf`
+
+3. **Report test evidence in chat:**
  - number of collected tests
  - pass/fail result
  - warnings (if any)
 
 Notes:
-- Do not run `./wpm.sh build` for `AIContextCraft`.
 - If local environment issues block execution, report the blocker and provide the exact command to rerun.

@@ -41,6 +41,7 @@ common_filters:
   - "build/*.md"
   - "build/*.log"
   - "build/logs/"
+  - "*.mdc"
 
 
 
