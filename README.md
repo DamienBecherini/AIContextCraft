@@ -1,4 +1,4 @@
-# AI Context Craft Craft Craft
+# AI Context Craft
 
 <div align="center">
   <h1>AI Context Craft</h1>
@@ -25,6 +25,8 @@ Stop manually copying and pasting files and start crafting the perfect context i
     *   `--strip-comments`: Reliably remove all comments and docstrings using Abstract Syntax Tree (AST) parsing, not just simple regex.
     *   `--headers-only`: Create a high-level summary of your code by extracting only class and function signatures and their docstrings.
 *   **Customizable Project Tree Generation**: Automatically generate a filtered file tree with sizes, per-extension totals, and visual markers (`●` concatenated, `○` tree-only via `project_only_filters`) to give the LLM a clear overview of the project structure.
+*   **Tree-Only Mode**: Use `--tree-only` to emit only the filtered project tree (sizes and per-extension totals) without file contents—useful for lightweight structural overviews.
+*   **Robust File Encoding**: Reads files as UTF-8 by default (`--encoding`); on decode failure, detects encoding via `charset-normalizer` and falls back to a controlled `replace` strategy with an explicit warning instead of silent data loss.
 *   **Two-Stage Filtering (Shield + Scalpel)**:
     *   **Stage 1 (Shield, on by default):** Hierarchical ignore files (`.gitignore`, `.dockerignore`, `.cursorignore`, `.npmignore`) are applied during directory traversal for fast pruning, plus hardcoded security patterns (`.env`, `.env.*`, `*.pem`, `*.key`, `.git/`) that always apply.
     *   **Stage 2 (Scalpel):** YAML `include_patterns` and exclusion filters refine what remains.
@@ -58,11 +60,11 @@ git clone https://github.com/your-username/ai-context-craft.git
 cd ai-context-craft
  
 # (Recommended) Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate # On Windows, use `venv\Scripts\activate`
+python -m venv .aicc_venv
+source .aicc_venv/bin/activate  # On Windows, use `.aicc_venv\Scripts\activate`
 
 # Install dependencies
-pip install pyyaml tiktoken
+pip install -r requirements.txt
 ```
 
 ### 2. Usage
@@ -88,6 +90,8 @@ python main.py -p /path/to/your/project -o /path/to/output/context.txt
 | `-o`, `--output`     | Path for the generated output file.                                       |
 | `--strip-comments`   | Remove comments and docstrings from code files.                           |
 | `--headers-only`     | Extract only function/class signatures and docstrings from Python files.  |
+| `--tree-only`        | Generate only the project tree (sizes, extensions), without file contents. |
+| `--encoding ENCODING` | Target encoding for reading files (default: `utf-8`; auto-detection on failure). |
 | `--no-ignore`        | Disable all hierarchical ignore files (`.gitignore`, `.dockerignore`, `.cursorignore`, `.npmignore`) while security patterns still apply. |
 | `--skip-ignore-files TYPES` | Disable only selected ignore types (`gitignore,dockerignore,cursorignore,npmignore`). |
 | `--ignore-files TYPES` | Enable only selected ignore types (inverse alias of `--skip-ignore-files`). |
@@ -191,9 +195,11 @@ Regenerate all architecture artifacts (Structurizr export, Mermaid validation, S
 ./scripts/architecture/generate-all.sh
 ```
 
-## ⚙️ Configuration (`config.yaml`)
+## ⚙️ Configuration (YAML)
 
 The real power of **AI Context Craft** lies in its configuration. Configuration files are optional and auto-detected in this order inside the target project: `.aicc.yaml`, `aicc.yaml`, `aicc.yml`, `config-concat-code.yaml`. If none is found, Zero-Config mode is used without creating files on disk.
+
+When no `--output` flag is provided, `output_path` in your YAML config overrides the default fallback path (`build/aicc_context.<ext>` based on `--format`).
 
 ```yaml
 # Default output file path.
@@ -255,12 +261,23 @@ include_patterns:
 
 ## 🗺️ Roadmap
 
-This project has a bright future! Our goal is to make it the most powerful and developer-friendly context-crafting tool available.
+High-level direction (details and ideas in [ROADMAP.md](ROADMAP.md)):
 
-*   ✅ **Phase 0: Foundation** - Refactor complete with modular and testable architecture.
-*   ✅ **Phase 1: Pro Experience** - Rich progress UI, smart clipboard support (`--clipboard-limit`, `--no-clipboard`), and LLM output formats (`--format text|xml|markdown`, default `xml`) are in place.
-*   🚀 **Phase 2: The Universal Tool** - Next priority: `tree-sitter` migration, multi-language comment handling, and token-based splitting (`--max-tokens`).
-*   🔄 **Phase 3: The Leap to Intelligence** - Git diff mode is available (`--git-diff REF_A REF_B`) and can be extended further.
+*   ✅ **Phase 0–1 (done):** Modular `craft/` architecture, hierarchical ignores, security exclusions, Zero-Config, Rich UI, clipboard limits, LLM formats (`--format text|xml|markdown`), and Git diff mode (`--git-diff`).
+*   🚀 **Phase 2 (next):** Universal extraction via `tree-sitter`—multi-language comment stripping and `--headers-only` repo maps beyond Python.
+*   🧠 **Phase 3 (planned):** Focus filtering (`--focus-git`, `--focus`) to combine full code on relevant files with repo-map summaries elsewhere.
+
+## 🛠️ Development
+
+From the repository root, using the project virtual environment:
+
+```bash
+# Full suite (~36 tests)
+.aicc_venv/bin/python -m pytest tests
+
+# Targeted run
+.aicc_venv/bin/python -m pytest tests/test_context_builder.py
+```
 
 ## 🤝 Contributing
 
