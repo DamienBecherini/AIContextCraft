@@ -32,6 +32,17 @@ Stop manually copying and pasting files and start crafting the perfect context i
 *   **Built-in Utilities**:
     *   Automatic token and size calculation with `tiktoken`.
     *   Verbose logging for easy debugging.
+*   **LLM-Optimized Output Formats**:
+    *   `--format text|xml|markdown` lets you target different AI workflows.
+    *   `xml` is recommended for Anthropic (Claude) and OpenAI usage because it provides strongly structured context sections such as `<repository>`, `<directory_structure>`, and `<files>`.
+*   **Smart Clipboard Integration**:
+    *   `-cb` / `--clipboard` copies the final output directly after generation.
+    *   Includes OSC 52 support, so clipboard copy also works from remote Linux sessions over SSH when the terminal supports it.
+*   **Dedicated Git Diff Mode**:
+    *   `--git-diff REF_A REF_B` generates a Markdown diff report between two revisions.
+    *   Ideal for AI-assisted Pull Request descriptions, review summaries, and change analysis.
+*   **Modern Console UX**:
+    *   Rich progress bars and colored logs improve readability and feedback on large repositories.
 
 ## 🚀 Quick Start
 
@@ -76,10 +87,43 @@ python main.py -p /path/to/your/project -o /path/to/output/context.txt
 | `--strip-comments`   | Remove comments and docstrings from code files.                           |
 | `--headers-only`     | Extract only function/class signatures and docstrings from Python files.  |
 | `--no-ignore`        | Disable hierarchical `.gitignore` filtering (security patterns still apply). |
-| `--git-diff`         | Generate a Markdown report with the global Git diff between two revisions. |
+| `--git-diff REF_A REF_B` | Generate a Markdown report with the global Git diff between two revisions. |
+| `--format {text,xml,markdown}` | Choose output format (`text` default, `xml`, or `markdown`). |
+| `-cb`, `--clipboard` | Copy the generated final content directly to the clipboard (OSC 52 supported). |
 | `--no-timestamp`     | Do not append a timestamp to the output filename.                         |
 | `--dry-run`          | Run the script without writing any files to see what would be included.   |
 | `-v`, `--verbose`    | Print detailed processing information to the console.                     |
+
+#### CLI Help Snapshot (`python main.py --help`)
+
+```text
+usage: main.py [-h] [-c CONFIG] [-p PROJECT] [-o OUTPUT] [--no-timestamp]
+               [--strip-comments] [--headers-only] [--tree-only] [--dry-run]
+               [--encoding ENCODING] [--no-ignore] [--git-diff REF_A REF_B]
+               [--format {text,xml,markdown}] [-cb] [-v]
+
+options:
+  -h, --help            show this help message and exit
+  -c CONFIG, --config CONFIG
+                        Path to YAML config file.
+  -p PROJECT, --project PROJECT
+                        Path to target project directory.
+  -o OUTPUT, --output OUTPUT
+                        Path to output file.
+  --no-timestamp        Do not append timestamp to output filename.
+  --strip-comments      Remove comments from files.
+  --headers-only        Keep only function/method signatures.
+  --tree-only           Generate only project tree (sizes/extensions), without file contents.
+  --dry-run             Simulate run without writing output file.
+  --encoding ENCODING   File encoding (default: utf-8).
+  --no-ignore           Disable hierarchical .gitignore filtering (security rules still apply).
+  --git-diff REF_A REF_B
+                        Special mode: generate global Git diff Markdown report between two revisions.
+  --format {text,xml,markdown}
+                        Output format: text (default), xml or markdown.
+  -cb, --clipboard      Copy final generated content to clipboard.
+  -v, --verbose         Print detailed processing information.
+```
 
 ### Example Workflow
 
@@ -97,6 +141,12 @@ Generate a dedicated Markdown diff report (without running the standard concaten
 
 ```bash
 python main.py --project ./my-python-app --git-diff HEAD~1 HEAD --output ./build/git_diff_report.txt --no-timestamp
+```
+
+Generate XML output optimized for LLM ingestion and copy it to clipboard in one command:
+
+```bash
+python main.py --project ./my-python-app --format xml --clipboard
 ```
 
 ## ⚙️ Configuration (`config.yaml`)
@@ -165,10 +215,10 @@ include_patterns:
 
 This project has a bright future! Our goal is to make it the most powerful and developer-friendly context-crafting tool available.
 
-*   ✅ **Phase 0: Foundation** - Refactor the codebase into a modular and testable architecture.
-*   🚧 **Phase 1: Pro Experience** - Add UX improvements like a progress bar (`tqdm`) and a `--clipboard` option.
-*   🚀 **Phase 2: The Universal Tool** - Extend comment stripping to multiple languages (JS, Java, C++, etc.), introduce configuration profiles, and add automatic output splitting for very large projects.
-*   🧠 **Phase 3: The Leap to Intelligence** - **Git diff integration** (`--git-diff <branch>`) to generate context only for changed files. Perfect for code reviews and PR descriptions.
+*   ✅ **Phase 0: Foundation** - Refactor complete with modular and testable architecture.
+*   ✅ **Phase 1: Pro Experience** - Rich progress UI, clipboard support (`--clipboard`), and LLM output formats (`--format text|xml|markdown`) are in place.
+*   🚀 **Phase 2: The Universal Tool** - Next priority: `tree-sitter` migration, multi-language comment handling, and token-based splitting (`--max-tokens`).
+*   🔄 **Phase 3: The Leap to Intelligence** - Git diff mode is available (`--git-diff REF_A REF_B`) and can be extended further.
 
 ## 🤝 Contributing
 

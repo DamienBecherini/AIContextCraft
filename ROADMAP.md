@@ -48,17 +48,21 @@ ai-context-craft/
 
 ### Catégorie A : Expérience Utilisateur & Améliorations de Base
 
-1.  **A1. Barre de Progression :**
-    *   **Quoi :** Afficher une barre de progression (`tqdm`) lors de la concaténation des fichiers.
+1.  **A1. Barre de Progression : ✅ TERMINÉ**
+    *   **Quoi :** Afficher une barre de progression (`rich`) lors de la concaténation des fichiers.
     *   **Pourquoi :** Fournir un retour visuel sur les projets volumineux et améliorer l'expérience utilisateur.
 
-2.  **A2. Copie vers le Presse-papiers :**
-    *   **Quoi :** Ajouter une option `--clipboard` pour copier la sortie directement dans le presse-papiers.
-    *   **Pourquoi :** Fluidifier radicalement le workflow de l'utilisateur (Générer -> Coller).
+2.  **A2. Copie vers le Presse-papiers : ✅ TERMINÉ**
+    *   **Quoi :** Ajouter une option `--clipboard` (`-cb`) pour copier la sortie directement dans le presse-papiers.
+    *   **Pourquoi :** Fluidifier radicalement le workflow de l'utilisateur (Générer -> Coller), y compris via SSH (OSC 52).
 
 3.  **A3. Gestion Robuste des Encodages :**
     *   **Quoi :** Remplacer `errors='ignore'` par une détection d'encodage (ex: `chardet`) ou, à défaut, logger un avertissement clair en cas d'échec de décodage.
     *   **Pourquoi :** Augmenter la fiabilité sur des projets hétérogènes.
+
+4.  **A4. Formats de sortie LLM-Optimized : ✅ TERMINÉ**
+    *   **Quoi :** Ajouter `--format {text,xml,markdown}` avec un rendu XML structuré pour les workflows IA.
+    *   **Pourquoi :** Produire un contexte mieux structuré et directement exploitable par les LLMs.
 
 ### Catégorie B : Extension des Capacités
 
@@ -76,8 +80,8 @@ ai-context-craft/
 
 ### Catégorie C : Contexte "Intelligent" & Intégration Git
 
-1.  **C1. Intégration Git `diff` :**
-    *   **Quoi :** Créer une option `--git-diff <branche>` pour ne traiter que les fichiers modifiés ou ajoutés par rapport à une branche de référence (ex: `main`).
+1.  **C1. Intégration Git `diff` : 🔄 PARTIELLEMENT TERMINÉ**
+    *   **Quoi :** Option `--git-diff <ref_a> <ref_b>` pour générer un rapport Markdown du diff Git global entre deux révisions.
     *   **Pourquoi :** **Fonctionnalité majeure.** Idéale pour les revues de code, la génération de descriptions de Pull Request ou le débuggage de nouvelles fonctionnalités.
 
 2.  **C2. Priorisation Intelligente des Tokens :**
@@ -88,7 +92,7 @@ ai-context-craft/
 
 ## 5. Roadmap Évolutive
 
-### **Phase 0 : Fondation - Le Grand Refactoring (Prérequis)**
+### **Phase 0 : Fondation - Le Grand Refactoring (Prérequis) — ✅ TERMINÉE**
 
 *   **Objectif :** Établir une base de code saine pour l'avenir.
 *   **Tâches :**
@@ -97,25 +101,26 @@ ai-context-craft/
     3.  Adapter `main.py` pour qu'il agisse en tant qu'orchestrateur.
     4.  S'assurer que toutes les fonctionnalités existantes fonctionnent parfaitement après le refactoring.
 
-### **Phase 1 : L'Expérience "Pro" (Améliorations UX)**
+### **Phase 1 : L'Expérience "Pro" (Améliorations UX) — ✅ TERMINÉE**
 
 *   **Objectif :** Rendre l'outil plus agréable et plus rapide à utiliser au quotidien.
-*   **Tâches :**
-    1.  Implémenter la barre de progression (**A1**).
-    2.  Implémenter la copie vers le presse-papiers (**A2**).
-    3.  Améliorer la gestion des encodages (**A3**).
+*   **Tâches réalisées :**
+    1.  Implémenter la barre de progression (**A1**, via `rich`).
+    2.  Implémenter la copie vers le presse-papiers (**A2**, avec support OSC 52 en SSH).
+    3.  Ajouter les formats LLM-Optimized (**A4**, `--format text|xml|markdown`).
 
-### **Phase 2 : L'Outil Universel (Extension des capacités)**
+### **Phase 2 : L'Outil Universel (Extension des capacités) — 🚀 PROCHAINE PRIORITÉ**
 
 *   **Objectif :** Faire de l'outil un compagnon indispensable pour tous types de projets.
 *   **Tâches :**
-    1.  Ajouter le support multi-langage pour la suppression des commentaires (**B1**).
-    2.  Mettre en place le système de profils de configuration (**B2**).
-    3.  Introduire le fractionnement automatique de la sortie par tokens (**B3**).
+    1.  Remplacer l'analyseur Python AST par **`tree-sitter`** pour débloquer une base multi-langage robuste.
+    2.  Ajouter le support multi-langage pour la suppression des commentaires (**B1**: JS/TS/Rust/C++/etc.).
+    3.  Introduire le fractionnement automatique de la sortie par tokens (**B3**, `--max-tokens`).
+    4.  Mettre en place le système de profils de configuration (**B2**) pour les projets complexes.
 
-### **Phase 3 : Le Saut vers l'Intelligence (Intégration Git)**
+### **Phase 3 : Le Saut vers l'Intelligence (Intégration Git) — 🔄 EN COURS (PARTIEL)**
 
 *   **Objectif :** Transformer l'outil d'un simple "concaténateur" à un véritable "assistant de contexte".
 *   **Tâches :**
-    1.  Implémenter l'intégration avec `git diff` (**C1**). C'est le jalon principal de cette phase.
+    1.  Consolider et enrichir l'intégration `git diff` (**C1**) déjà disponible.
     2.  (Optionnel) Commencer à explorer la priorisation intelligente des tokens (**C2**).
