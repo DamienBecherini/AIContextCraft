@@ -3,7 +3,6 @@ import base64
 import datetime
 import json
 import logging
-import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -11,15 +10,12 @@ from typing import Any
 import pyperclip
 import yaml
 from rich.console import Console
-from rich.progress import track
 
-from craft.file_processor import get_python_headers, strip_comments_from_code
+from craft.context_builder import ContextBuilder
 from craft.filter_manager import FilterManager
 from craft.formatter import build_output
 from craft.git_manager import get_git_diff
 from craft.ignore_manager import IgnoreManager
-from craft.tree_generator import format_extension_summary, generate_tree
-from craft.types import ProcessedFile
 from craft.utils import get_file_stats, setup_logging
 
 
@@ -452,71 +448,17 @@ def main():
     logging.info("="*50)
 
     console.print("[bold]Concaténation des fichiers...[/bold]")
-    files_data: list[ProcessedFile] = []
-
-    logging.info("Recherche optimisée des fichiers (avec élagage des dossiers exclus)...")
-    final_file_list = []
-    for root, dirs, files in os.walk(project_path, topdown=True):
-        excluded_dirs = []
-        for d in dirs:
-            dir_path = Path(root) / d
-            dir_path_str = str(dir_path.relative_to(project_path)).replace('\\', '/')
-            if ignore_manager.is_ignored(dir_path):
-                excluded_dirs.append(d)
-            elif filter_manager.is_project_excluded(dir_path_str, is_dir=True):
-                excluded_dirs.append(d)
-
-        for d in excluded_dirs:
-            dirs.remove(d)
-
-        for filename in files:
-            file_path = Path(root) / filename
-            relative_path_str = str(file_path.relative_to(project_path)).replace('\\', '/')
-
-            if ignore_manager.is_ignored(file_path):
-                continue
-            if filter_manager.is_included(relative_path_str) and not filter_manager.is_project_excluded(
-                relative_path_str
-            ):
-                final_file_list.append(file_path)
-
-    final_file_list.sort()
-    concatenated_paths = set(final_file_list)
-
-    logging.info("Génération de l'arbre du projet...")
-    project_tree, tree_paths = generate_tree(
-        project_path, filter_manager, concatenated_paths,
-        ignore_manager=ignore_manager,
+    builder = ContextBuilder(
+        project_path,
+        filter_manager,
+        ignore_manager,
+        args.encoding,
+        args,
+        full_body_filters,
     )
-    tree_file_paths = {p for p in tree_paths if p.is_file()}
-    extension_summary = format_extension_summary(tree_file_paths, concatenated_paths)
-    logging.info(f"{len(final_file_list)} fichiers finaux trouvés après filtrage optimisé.")
-    logging.info("--- LISTE DES FICHIERS À TRAITER ---")
-    for p in final_file_list:
-        logging.info(f"  [INCLUS] {str(p.relative_to(project_path)).replace('\\', '/')}")
-    logging.info("--- FIN DE LA LISTE ---")
+    project_tree, extension_summary, files_data = builder.build()
 
     if not args.tree_only:
-        file_iterator = track(
-            final_file_list,
-            description="Traitement des fichiers...",
-            disable=not sys.stdout.isatty(),
-        )
-        for file_path in file_iterator:
-            relative_path_str = str(file_path.relative_to(project_path)).replace('\\', '/')
-            try:
-                with open(file_path, 'r', encoding=args.encoding, errors='ignore') as f:
-                    content = f.read()
-
-                if args.headers_only and file_path.suffix == '.py':
-                    content = get_python_headers(content, full_body_filters)
-                elif args.strip_comments:
-                    content = strip_comments_from_code(content, file_path)
-
-                files_data.append(ProcessedFile(path=relative_path_str, content=content))
-            except IOError as e:
-                logging.error(f"  -> ERREUR: Impossible de lire {relative_path_str}. Erreur: {e}")
-
         logging.info("Assemblage du fichier de sortie...")
         full_body = build_output(
             content_format,
