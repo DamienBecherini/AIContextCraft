@@ -4,37 +4,37 @@ overview: Refactoring iso-fonctionnel de aicc.py (~509 lignes) vers le package c
 todos:
   - id: publish-plan
     content: Enregistrer ce plan dans docs/plans/refactor/phase-0/2026_05_17_16:00_phase-0-refactoring.plan.md
-    status: in_progress
+    status: completed
   - id: create-craft-structure
     content: Créer craft/ avec __init__.py
-    status: pending
+    status: completed
   - id: extract-utils-and-git
     content: Créer craft/utils.py (TIKTOKEN, logging, stats) et craft/git_manager.py (get_git_diff)
-    status: pending
+    status: completed
   - id: extract-file-processor
     content: Créer craft/file_processor.py (strip_comments, get_python_headers)
-    status: pending
+    status: completed
   - id: extract-filter-and-tree
     content: Créer craft/filter_manager.py et craft/tree_generator.py
-    status: pending
+    status: completed
   - id: create-main-orchestrator
     content: Créer main.py depuis aicc.py avec imports craft/* (orchestrateur seul)
-    status: pending
+    status: completed
   - id: create-aicc-shim
     content: Conserver aicc.py comme point d'entrée mince déléguant à main.main()
-    status: pending
+    status: completed
   - id: clean-unused-imports
     content: Supprimer les imports morts (io, tokenize) dans tous les modules concernés
-    status: pending
+    status: completed
   - id: update-tests-readme
     content: Mettre à jour tests/test_aicc.py, tests/setup_tests.sh et README.md
-    status: pending
+    status: completed
   - id: run-regression-tests
     content: Lancer pytest (6 tests) et vérifier que aicc.py et main.py se comportent identiquement
-    status: pending
+    status: completed
   - id: save-report
     content: Demander si le compte-rendu d'implémentation doit être sauvegardé dans le plan
-    status: pending
+    status: completed
 isProject: true
 ---
 
