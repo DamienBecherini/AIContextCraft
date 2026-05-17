@@ -19,7 +19,7 @@ Stop manually copying and pasting files and start crafting the perfect context i
 
 ## ✨ Key Features
 
-*   **Powerful YAML Configuration**: Define exactly what to include and exclude using a simple `config.yaml` file.
+*   **Powerful (Optional) YAML Configuration**: Define exactly what to include and exclude with auto-detected config files (`.aicc.yaml`, `aicc.yaml`, `aicc.yml`, `config-concat-code.yaml`).
 *   **Intelligent Two-Step Filtering**: A robust `include-then-exclude` logic gives you granular control over your context. First, specify what you want with `include_patterns`, then clean it up with various exclusion filters.
 *   **Advanced Python Code Processing**:
     *   `--strip-comments`: Reliably remove all comments and docstrings using Abstract Syntax Tree (AST) parsing, not just simple regex.
@@ -33,10 +33,11 @@ Stop manually copying and pasting files and start crafting the perfect context i
     *   Automatic token and size calculation with `tiktoken`.
     *   Verbose logging for easy debugging.
 *   **LLM-Optimized Output Formats**:
-    *   `--format text|xml|markdown` lets you target different AI workflows.
+    *   `--format text|xml|markdown` lets you target different AI workflows (`xml` default).
     *   `xml` is recommended for Anthropic (Claude) and OpenAI usage because it provides strongly structured context sections such as `<repository>`, `<directory_structure>`, and `<files>`.
 *   **Smart Clipboard Integration**:
-    *   `-cb` / `--clipboard` copies the final output directly after generation.
+    *   Clipboard copy is automatic by default up to 10 MB (`-cb/--clipboard-limit MB`).
+    *   Use `--no-clipboard` to disable automatic clipboard copy completely.
     *   Includes OSC 52 support, so clipboard copy also works from remote Linux sessions over SSH when the terminal supports it.
 *   **Dedicated Git Diff Mode**:
     *   `--git-diff REF_A REF_B` generates a Markdown diff report between two revisions.
@@ -65,7 +66,7 @@ pip install pyyaml tiktoken
 
 ### 2. Usage
 
-Run the script from your terminal. By default, it looks for a `config.yaml` in the same directory and scans the current project.
+Run the script from your terminal. By default, it scans the current project, auto-detects config files if present (`.aicc.yaml`, `aicc.yaml`, `aicc.yml`, `config-concat-code.yaml`), and writes output to `build/aicc_context.<ext>` (`xml` by default).
 
 ```bash
 # Generate context for the current directory
@@ -88,8 +89,9 @@ python main.py -p /path/to/your/project -o /path/to/output/context.txt
 | `--headers-only`     | Extract only function/class signatures and docstrings from Python files.  |
 | `--no-ignore`        | Disable hierarchical `.gitignore` filtering (security patterns still apply). |
 | `--git-diff REF_A REF_B` | Generate a Markdown report with the global Git diff between two revisions. |
-| `--format {text,xml,markdown}` | Choose output format (`text` default, `xml`, or `markdown`). |
-| `-cb`, `--clipboard` | Copy the generated final content directly to the clipboard (OSC 52 supported). |
+| `--format {text,xml,markdown}` | Choose output format (`xml` default, or `text`/`markdown`). |
+| `-cb MB`, `--clipboard-limit MB` | Maximum size in MB for automatic clipboard copy (default: `10.0`). |
+| `--no-clipboard` | Disable automatic clipboard copy completely. |
 | `--no-timestamp`     | Do not append a timestamp to the output filename.                         |
 | `--dry-run`          | Run the script without writing any files to see what would be included.   |
 | `-v`, `--verbose`    | Print detailed processing information to the console.                     |
@@ -100,7 +102,7 @@ python main.py -p /path/to/your/project -o /path/to/output/context.txt
 usage: main.py [-h] [-c CONFIG] [-p PROJECT] [-o OUTPUT] [--no-timestamp]
                [--strip-comments] [--headers-only] [--tree-only] [--dry-run]
                [--encoding ENCODING] [--no-ignore] [--git-diff REF_A REF_B]
-               [--format {text,xml,markdown}] [-cb] [-v]
+               [--format {text,xml,markdown}] [-cb MB] [--no-clipboard] [-v]
 
 options:
   -h, --help            show this help message and exit
@@ -120,8 +122,10 @@ options:
   --git-diff REF_A REF_B
                         Special mode: generate global Git diff Markdown report between two revisions.
   --format {text,xml,markdown}
-                        Output format: text (default), xml or markdown.
-  -cb, --clipboard      Copy final generated content to clipboard.
+                        Output format: xml (default), text or markdown.
+  -cb MB, --clipboard-limit MB
+                        Maximum size in MB for automatic clipboard copy (default: 10.0).
+  --no-clipboard        Disable automatic clipboard copy.
   -v, --verbose         Print detailed processing information.
 ```
 
@@ -135,7 +139,7 @@ python main.py --project ./my-python-app --strip-comments -v
 
 On large repositories (Node, Python, etc.), ignored folders such as `node_modules/` or `.venv/` are pruned during traversal before YAML filters run, which speeds up scanning significantly.
 
-This will create a file in the `build/` directory containing the project tree and the cleaned content of all relevant files.
+This creates a file in `build/` (default `build/aicc_context.xml`) containing the project tree and the cleaned content of all relevant files.
 
 Generate a dedicated Markdown diff report (without running the standard concatenation flow):
 
@@ -143,15 +147,15 @@ Generate a dedicated Markdown diff report (without running the standard concaten
 python main.py --project ./my-python-app --git-diff HEAD~1 HEAD --output ./build/git_diff_report.txt --no-timestamp
 ```
 
-Generate XML output optimized for LLM ingestion and copy it to clipboard in one command:
+Generate XML output optimized for LLM ingestion and increase clipboard limit for large projects:
 
 ```bash
-python main.py --project ./my-python-app --format xml --clipboard
+python main.py --project ./my-python-app --format xml --clipboard-limit 25
 ```
 
 ## ⚙️ Configuration (`config.yaml`)
 
-The real power of **AI Context Craft** lies in its configuration. A `config.yaml` is automatically created on first run.
+The real power of **AI Context Craft** lies in its configuration. Configuration files are optional and auto-detected in this order inside the target project: `.aicc.yaml`, `aicc.yaml`, `aicc.yml`, `config-concat-code.yaml`. If none is found, Zero-Config mode is used without creating files on disk.
 
 ```yaml
 # Default output file path.
@@ -216,7 +220,7 @@ include_patterns:
 This project has a bright future! Our goal is to make it the most powerful and developer-friendly context-crafting tool available.
 
 *   ✅ **Phase 0: Foundation** - Refactor complete with modular and testable architecture.
-*   ✅ **Phase 1: Pro Experience** - Rich progress UI, clipboard support (`--clipboard`), and LLM output formats (`--format text|xml|markdown`) are in place.
+*   ✅ **Phase 1: Pro Experience** - Rich progress UI, smart clipboard support (`--clipboard-limit`, `--no-clipboard`), and LLM output formats (`--format text|xml|markdown`, default `xml`) are in place.
 *   🚀 **Phase 2: The Universal Tool** - Next priority: `tree-sitter` migration, multi-language comment handling, and token-based splitting (`--max-tokens`).
 *   🔄 **Phase 3: The Leap to Intelligence** - Git diff mode is available (`--git-diff REF_A REF_B`) and can be extended further.
 

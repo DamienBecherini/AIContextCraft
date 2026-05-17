@@ -44,6 +44,33 @@ def maybe_copy_to_clipboard(clipboard_enabled, content, console):
             )
 
 
+def should_copy_to_clipboard(args, content, console):
+    if args.no_clipboard:
+        logging.info("Copie presse-papiers désactivée via --no-clipboard.")
+        return False
+
+    content_size_bytes = len(content.encode(args.encoding))
+    content_size_mb = content_size_bytes / (1024 * 1024)
+    clipboard_limit_mb = args.clipboard_limit
+
+    if content_size_mb > clipboard_limit_mb:
+        console.print(
+            (
+                f"[yellow]⚠️ Le fichier généré ({content_size_mb:.2f} Mo) dépasse la limite "
+                f"du presse-papiers ({clipboard_limit_mb:.2f} Mo). "
+                "Copie annulée. Utilisez -cb <taille> pour forcer.[/yellow]"
+            )
+        )
+        logging.info(
+            "Copie presse-papiers annulée (%.2f Mo > %.2f Mo).",
+            content_size_mb,
+            clipboard_limit_mb,
+        )
+        return False
+
+    return True
+
+
 def main():
     console = Console()
     parser = argparse.ArgumentParser(description="Agrège les fichiers d'un projet en un seul fichier texte pour une IA.")
@@ -58,26 +85,48 @@ def main():
     parser.add_argument('--encoding', type=str, default='utf-8', help="Encodage des fichiers (défaut: utf-8).")
     parser.add_argument('--no-ignore', action='store_true', help="Désactive les .gitignore hiérarchiques (les règles de sécurité restent actives).")
     parser.add_argument('--git-diff', nargs=2, metavar=('REF_A', 'REF_B'), help="Mode spécial: génère un rapport Markdown du diff Git global entre deux révisions.")
-    parser.add_argument('--format', choices=['text', 'xml', 'markdown'], help="Format de sortie: text (défaut), xml ou markdown.")
-    parser.add_argument('-cb', '--clipboard', action='store_true', help="Copie le contenu final dans le presse-papiers.")
+    parser.add_argument('--format', choices=['text', 'xml', 'markdown'], default='xml', help="Format de sortie: xml (défaut), text ou markdown.")
+    parser.add_argument('-cb', '--clipboard-limit', type=float, default=10.0, metavar='MB', help="Taille maximum en Mo pour la copie automatique dans le presse-papiers (défaut: 10.0).")
+    parser.add_argument('--no-clipboard', action='store_true', help="Désactive totalement la copie automatique dans le presse-papiers.")
     parser.add_argument('-v', '--verbose', action='store_true', help="Affiche des informations détaillées sur la console.")
     args = parser.parse_args()
 
     DEFAULT_CONFIG = {
-        'output_path': './build/project_context.txt',
         'include_patterns': ['**/*'],
         'common_filters': ['__pycache__/', '*.pyc', '.git/', '.venv/', 'venv/', 'node_modules/', 'build/', 'dist/', '.idea/', '.vscode/'],
         'project_only_filters': [],
         'tree_only_filters': ['*.md', 'LICENSE', '.gitignore', 'config.yaml'],
         'full_body_filters': ['main', 'run_app', 'settings', 'configure_*'],
-        'output_format': 'text',
+        'output_format': 'xml',
     }
 
-    config = DEFAULT_CONFIG.copy()
-    script_dir = Path(__file__).resolve().parent
-    config_path = Path(args.config or script_dir / 'config.yaml')
+    if args.clipboard_limit < 0:
+        parser.error("--clipboard-limit doit être >= 0.")
 
-    if config_path.exists():
+    config = DEFAULT_CONFIG.copy()
+    config_path = None
+    if args.config:
+        explicit_config_path = Path(args.config)
+        if explicit_config_path.exists():
+            config_path = explicit_config_path
+        else:
+            logging.info(
+                "Fichier de configuration explicite introuvable: '%s'. Mode Zero-Config activé.",
+                explicit_config_path,
+            )
+    else:
+        config_search_root = Path(args.project or '.').resolve()
+        auto_config_candidates = ['.aicc.yaml', 'aicc.yaml', 'aicc.yml', 'config-concat-code.yaml']
+        for candidate in auto_config_candidates:
+            candidate_path = config_search_root / candidate
+            if candidate_path.exists():
+                config_path = candidate_path
+                logging.info(f"Fichier de configuration trouvé automatiquement : '{candidate_path}'")
+                break
+        if config_path is None:
+            logging.info("Aucun fichier de configuration trouvé. Mode Zero-Config activé (basé sur les .gitignore).")
+
+    if config_path is not None:
         try:
             with open(config_path, 'r', encoding=args.encoding) as f:
                 config.update(yaml.safe_load(f) or {})
@@ -91,11 +140,20 @@ def main():
             sys.exit(f"ERREUR: Impossible de parser le fichier de configuration '{config_path}': {e}{error_help}")
 
     project_path = Path(args.project or config.get('project_path', '.')).resolve()
-    output_path_str = args.output or config.get('output_path')
-    output_format = args.format or config.get('output_format', 'text')
+    output_format = args.format or config.get('output_format', 'xml')
     if output_format not in {'text', 'xml', 'markdown'}:
-        logging.warning(f"Format de sortie inconnu '{output_format}' dans la configuration. Fallback vers 'text'.")
-        output_format = 'text'
+        logging.warning(f"Format de sortie inconnu '{output_format}' dans la configuration. Fallback vers 'xml'.")
+        output_format = 'xml'
+
+    output_path_str = args.output or config.get('output_path')
+    if not output_path_str:
+        default_extension_by_format = {
+            'text': 'txt',
+            'xml': 'xml',
+            'markdown': 'md',
+        }
+        output_path_str = f"./build/aicc_context.{default_extension_by_format[output_format]}"
+        logging.info("Aucun chemin de sortie fourni. Utilisation du chemin par défaut: '%s'", output_path_str)
 
     output_path = Path(output_path_str)
     if not args.no_timestamp:
@@ -107,11 +165,7 @@ def main():
 
     if args.dry_run:
         console.print("[bold yellow]--- MODE DRY RUN ACTIVÉ : AUCUN FICHIER NE SERA ÉCRIT ---[/bold yellow]")
-    if not config_path.exists():
-        with open(config_path, 'w', encoding=args.encoding) as f:
-            yaml.dump(DEFAULT_CONFIG, f, sort_keys=False, allow_unicode=True)
-        logging.info(f"Fichier de configuration par défaut créé à '{config_path}'")
-    else:
+    if config_path is not None:
         logging.info(f"Configuration chargée et fusionnée depuis '{config_path}'")
 
     if args.git_diff:
@@ -144,7 +198,7 @@ def main():
             full_body
         ])
 
-        if output_path.suffix.lower() == '.txt':
+        if output_path.suffix.lower() != '.md':
             output_path = output_path.with_suffix('.md')
             log_path = output_path.with_suffix('.log')
 
@@ -158,7 +212,7 @@ def main():
             console.print("\n[bold yellow]Opération (dry run) terminée.[/bold yellow]")
             console.print(f"[cyan]Le fichier de sortie aurait été :[/cyan] {output_path.resolve()}")
 
-        maybe_copy_to_clipboard(args.clipboard, final_output_str, console)
+        maybe_copy_to_clipboard(should_copy_to_clipboard(args, final_output_str, console), final_output_str, console)
         console.print(f"[cyan]Fichier de log généré :[/cyan] {log_path.resolve()}")
         console.print(f"[magenta]Statistiques finales :[/magenta] {stats}")
         return
@@ -304,7 +358,7 @@ def main():
         console.print("\n[bold yellow]Opération (dry run) terminée.[/bold yellow]")
         console.print(f"[cyan]Le fichier de sortie aurait été :[/cyan] {output_path.resolve()}")
 
-    maybe_copy_to_clipboard(args.clipboard, final_output_str, console)
+    maybe_copy_to_clipboard(should_copy_to_clipboard(args, final_output_str, console), final_output_str, console)
     console.print(f"[cyan]Fichier de log généré :[/cyan] {log_path.resolve()}")
     console.print(f"[magenta]Statistiques finales :[/magenta] {stats}")
 

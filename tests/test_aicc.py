@@ -85,7 +85,9 @@ def test_basic_concatenation(tmp_path):
         '--project', str(test_project_path),
         '--output', str(output_file),
         '--no-timestamp',
-        '--config', str(test_project_path / 'config.yaml')
+        '--config', str(test_project_path / 'config.yaml'),
+        '--format', 'text',
+        '--no-clipboard',
     ]
     
     # 3. Exécuter le script
@@ -108,6 +110,8 @@ def test_tree_stats_project_indicators(tmp_path):
         '--output', str(output_file),
         '--no-timestamp',
         '--config', str(test_project_path / 'config.yaml'),
+        '--format', 'text',
+        '--no-clipboard',
     ]
 
     result = run_aicc(args)
@@ -135,7 +139,9 @@ def test_special_chars_pattern_with_slash(tmp_path):
         '--project', str(test_project_path),
         '--output', str(output_file),
         '--no-timestamp',
-        '--config', str(test_project_path / 'config_slash.yaml')
+        '--config', str(test_project_path / 'config_slash.yaml'),
+        '--format', 'text',
+        '--no-clipboard',
     ]
 
     result = run_aicc(args)
@@ -154,7 +160,9 @@ def test_special_chars_pattern_with_backslashes(tmp_path):
         '--project', str(test_project_path),
         '--output', str(output_file),
         '--no-timestamp',
-        '--config', str(test_project_path / 'config_backslash.yaml')
+        '--config', str(test_project_path / 'config_backslash.yaml'),
+        '--format', 'text',
+        '--no-clipboard',
     ]
 
     result = run_aicc(args)
@@ -178,7 +186,8 @@ def test_invalid_yaml_backslash_error_has_guidance(tmp_path):
         '--project', str(test_project_path),
         '--output', str(output_file),
         '--no-timestamp',
-        '--config', str(invalid_config)
+        '--config', str(invalid_config),
+        '--no-clipboard',
     ]
 
     result = run_aicc(args)
@@ -220,7 +229,8 @@ def test_git_diff_mode_generates_markdown_output(tmp_path):
         '--project', str(repo_path),
         '--output', str(output_file),
         '--no-timestamp',
-        '--git-diff', sha_a, sha_b
+        '--git-diff', sha_a, sha_b,
+        '--no-clipboard',
     ]
 
     result = run_aicc(args, cwd=repo_path)
@@ -245,6 +255,8 @@ def test_nested_gitignore_and_security_patterns(tmp_path):
         '--output', str(output_file),
         '--no-timestamp',
         '--config', str(test_project_path / 'config.yaml'),
+        '--format', 'text',
+        '--no-clipboard',
     ]
 
     result = run_aicc(args)
@@ -263,7 +275,9 @@ def test_nested_gitignore_and_security_patterns(tmp_path):
         '--output', str(output_no_ignore),
         '--no-timestamp',
         '--config', str(test_project_path / 'config.yaml'),
+        '--format', 'text',
         '--no-ignore',
+        '--no-clipboard',
     ]
     result_no_ignore = run_aicc(args_no_ignore)
     assert result_no_ignore.returncode == 0, (
@@ -288,7 +302,8 @@ def test_git_diff_mode_with_invalid_ref_fails(tmp_path):
         '--project', str(repo_path),
         '--output', str(output_file),
         '--no-timestamp',
-        '--git-diff', sha_a, 'not-a-valid-ref'
+        '--git-diff', sha_a, 'not-a-valid-ref',
+        '--no-clipboard',
     ]
 
     result = run_aicc(args, cwd=repo_path)
@@ -308,6 +323,7 @@ def test_xml_format_output_structure(tmp_path):
         '--no-timestamp',
         '--config', str(test_project_path / 'config.yaml'),
         '--format', 'xml',
+        '--no-clipboard',
     ]
 
     result = run_aicc(args)
@@ -332,6 +348,7 @@ def test_markdown_format_output_structure(tmp_path):
         '--no-timestamp',
         '--config', str(test_project_path / 'config.yaml'),
         '--format', 'markdown',
+        '--no-clipboard',
     ]
 
     result = run_aicc(args)
@@ -357,6 +374,7 @@ def test_tree_only_xml_omits_files_section(tmp_path):
         '--config', str(test_project_path / 'config.yaml'),
         '--format', 'xml',
         '--tree-only',
+        '--no-clipboard',
     ]
 
     result = run_aicc(args)
@@ -380,6 +398,7 @@ def test_tree_only_markdown_omits_files_section(tmp_path):
         '--config', str(test_project_path / 'config.yaml'),
         '--format', 'markdown',
         '--tree-only',
+        '--no-clipboard',
     ]
 
     result = run_aicc(args)
@@ -405,6 +424,7 @@ def test_xml_format_escapes_file_content(tmp_path):
         '--output', str(output_file),
         '--no-timestamp',
         '--format', 'xml',
+        '--no-clipboard',
     ]
 
     result = run_aicc(args)
@@ -413,3 +433,122 @@ def test_xml_format_escapes_file_content(tmp_path):
     content = output_file.read_text(encoding='utf-8')
     assert '&lt;tag&gt;&amp;value&lt;/tag&gt;' in content
     assert '<tag>&value</tag>' not in content
+
+
+def test_clipboard_limit_skips_copy_when_output_is_too_large(tmp_path):
+    """Valide que la copie est annulée si la sortie dépasse --clipboard-limit."""
+    project_path = tmp_path / 'clipboard_limit_project'
+    project_path.mkdir()
+    (project_path / 'big.txt').write_text("A" * 3000, encoding='utf-8')
+
+    output_file = tmp_path / 'clipboard_limit_output.xml'
+    args = [
+        '--project', str(project_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--format', 'xml',
+        '--clipboard-limit', '0.001',
+    ]
+
+    result = run_aicc(args)
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert "dépasse la limite du presse-papiers" in result.stdout
+    assert "Contenu copié dans le presse-papiers." not in result.stdout
+    assert "Contenu envoyé au presse-papiers via SSH (OSC 52)." not in result.stdout
+
+
+def test_no_clipboard_disables_automatic_copy(tmp_path):
+    """Valide que --no-clipboard empêche toute tentative de copie."""
+    project_path = tmp_path / 'no_clipboard_project'
+    project_path.mkdir()
+    (project_path / 'small.txt').write_text("hello\n", encoding='utf-8')
+
+    output_file = tmp_path / 'no_clipboard_output.xml'
+    args = [
+        '--project', str(project_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--format', 'xml',
+        '--no-clipboard',
+    ]
+
+    result = run_aicc(args)
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert "Contenu copié dans le presse-papiers." not in result.stdout
+    assert "Contenu envoyé au presse-papiers via SSH (OSC 52)." not in result.stdout
+
+
+def test_default_output_path_uses_build_and_format_extension(tmp_path):
+    """Valide le fallback output vers build/aicc_context.<ext> si non fourni."""
+    project_path = tmp_path / 'default_output_project'
+    project_path.mkdir()
+    (project_path / 'snippet.py').write_text("print('ok')\n", encoding='utf-8')
+
+    result = run_aicc(
+        [
+            '--project', str(project_path),
+            '--no-timestamp',
+            '--format', 'xml',
+            '--no-clipboard',
+        ],
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    generated_file = tmp_path / 'build' / 'aicc_context.xml'
+    assert generated_file.exists(), "Le fichier build/aicc_context.xml n'a pas été généré."
+
+
+def test_zero_config_auto_detects_aicc_yaml(tmp_path):
+    """Valide la détection automatique de .aicc.yaml sans --config."""
+    project_path = tmp_path / 'auto_config_project'
+    project_path.mkdir()
+    (project_path / 'keep.py').write_text("print('keep')\n", encoding='utf-8')
+    (project_path / 'skip.txt').write_text("skip\n", encoding='utf-8')
+    (project_path / '.aicc.yaml').write_text(
+        "include_patterns:\n"
+        "  - '*.py'\n"
+        "common_filters: []\n"
+        "project_only_filters: []\n"
+        "tree_only_filters: []\n",
+        encoding='utf-8',
+    )
+
+    output_file = tmp_path / 'auto_config_output.xml'
+    result = run_aicc(
+        [
+            '--project', str(project_path),
+            '--output', str(output_file),
+            '--no-timestamp',
+            '--format', 'xml',
+            '--no-clipboard',
+        ],
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    content = output_file.read_text(encoding='utf-8')
+    assert '<file path="keep.py">' in content
+    assert '<file path="skip.txt">' not in content
+
+
+def test_zero_config_does_not_create_config_file(tmp_path):
+    """Valide qu'aucun config.yaml n'est créé si aucun fichier n'est trouvé."""
+    project_path = tmp_path / 'no_config_project'
+    project_path.mkdir()
+    (project_path / 'main.py').write_text("print('hi')\n", encoding='utf-8')
+
+    result = run_aicc(
+        [
+            '--project', str(project_path),
+            '--no-timestamp',
+            '--format', 'xml',
+            '--no-clipboard',
+        ],
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert not (project_path / 'config.yaml').exists()
