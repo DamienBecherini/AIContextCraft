@@ -71,6 +71,52 @@ def should_copy_to_clipboard(args, content, console):
     return True
 
 
+def print_config_resolution_status(console, config_path, config_source, explicit_config_path):
+    if config_source == "explicit":
+        console.print(f"[cyan]Configuration utilisée :[/cyan] explicite ({config_path.resolve()})")
+    elif config_source == "auto":
+        console.print(f"[cyan]Configuration utilisée :[/cyan] auto-détectée ({config_path.resolve()})")
+    elif config_source == "explicit_missing":
+        console.print(
+            f"[yellow]Configuration :[/yellow] fichier explicite introuvable ({explicit_config_path}), fallback defaults."
+        )
+    else:
+        console.print("[yellow]Configuration :[/yellow] aucun fichier trouvé, fallback defaults.")
+
+
+def print_ignore_report(console, project_path, ignore_manager, disabled=False):
+    ignore_report = ignore_manager.get_ignore_file_report()
+    ignore_names = ", ".join(ignore_manager.IGNORE_FILENAMES)
+    header = f"[cyan]Fichiers d'ignore détectés ({ignore_names}) :[/cyan]"
+    if disabled:
+        header += " [yellow](filtrage ignore désactivé via --no-ignore)[/yellow]"
+    console.print(header)
+
+    if not ignore_report:
+        console.print("  - (aucun)")
+        return
+
+    for item in ignore_report:
+        ignore_path = item["path"]
+        try:
+            rel_path = ignore_path.relative_to(project_path).as_posix()
+        except ValueError:
+            rel_path = ignore_path.as_posix()
+
+        if item["invalid"]:
+            status = "trouve+erreur"
+        elif item["used"] and item["active"]:
+            status = "trouve+utilise"
+        elif item["used"]:
+            status = "trouve+utilise(vide)"
+        elif disabled:
+            status = "trouve+non_utilise(desactive)"
+        else:
+            status = "trouve+non_utilise"
+
+        console.print(f"  - {rel_path} ({status})")
+
+
 def main():
     console = Console()
     parser = argparse.ArgumentParser(description="Agrège les fichiers d'un projet en un seul fichier texte pour une IA.")
@@ -105,11 +151,15 @@ def main():
 
     config = DEFAULT_CONFIG.copy()
     config_path = None
+    config_source = "auto_missing"
+    explicit_config_path = None
     if args.config:
         explicit_config_path = Path(args.config)
         if explicit_config_path.exists():
             config_path = explicit_config_path
+            config_source = "explicit"
         else:
+            config_source = "explicit_missing"
             logging.info(
                 "Fichier de configuration explicite introuvable: '%s'. Mode Zero-Config activé.",
                 explicit_config_path,
@@ -121,9 +171,11 @@ def main():
             candidate_path = config_search_root / candidate
             if candidate_path.exists():
                 config_path = candidate_path
+                config_source = "auto"
                 logging.info(f"Fichier de configuration trouvé automatiquement : '{candidate_path}'")
                 break
         if config_path is None:
+            config_source = "auto_missing"
             logging.info("Aucun fichier de configuration trouvé. Mode Zero-Config activé (basé sur les .gitignore).")
 
     if config_path is not None:
@@ -167,6 +219,7 @@ def main():
         console.print("[bold yellow]--- MODE DRY RUN ACTIVÉ : AUCUN FICHIER NE SERA ÉCRIT ---[/bold yellow]")
     if config_path is not None:
         logging.info(f"Configuration chargée et fusionnée depuis '{config_path}'")
+    print_config_resolution_status(console, config_path, config_source, explicit_config_path)
 
     if args.git_diff:
         if output_format != 'markdown':
@@ -242,9 +295,15 @@ def main():
         project_path, disabled=args.no_ignore, encoding=args.encoding
     )
     if args.no_ignore:
-        logging.info("Bouclier natif : .gitignore désactivés (--no-ignore), règles de sécurité actives.")
+        logging.info(
+            "Bouclier natif : ignore files (%s) désactivés (--no-ignore), règles de sécurité actives.",
+            ", ".join(ignore_manager.IGNORE_FILENAMES),
+        )
     else:
-        logging.info("Bouclier natif : .gitignore hiérarchiques actifs (étage 1).")
+        logging.info(
+            "Bouclier natif : ignore files hiérarchiques actifs (étage 1) : %s",
+            ", ".join(ignore_manager.IGNORE_FILENAMES),
+        )
 
     include_spec = pathspec.PathSpec.from_lines('gitwildmatch', include_patterns)
     project_exclude_spec = pathspec.PathSpec.from_lines('gitwildmatch', final_project_filters)
@@ -359,6 +418,7 @@ def main():
         console.print(f"[cyan]Le fichier de sortie aurait été :[/cyan] {output_path.resolve()}")
 
     maybe_copy_to_clipboard(should_copy_to_clipboard(args, final_output_str, console), final_output_str, console)
+    print_ignore_report(console, project_path, ignore_manager, disabled=args.no_ignore)
     console.print(f"[cyan]Fichier de log généré :[/cyan] {log_path.resolve()}")
     console.print(f"[magenta]Statistiques finales :[/magenta] {stats}")
 

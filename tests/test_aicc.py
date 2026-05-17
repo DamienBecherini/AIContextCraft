@@ -552,3 +552,44 @@ def test_zero_config_does_not_create_config_file(tmp_path):
 
     assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
     assert not (project_path / 'config.yaml').exists()
+
+
+def test_console_reports_config_and_ignore_usage(tmp_path):
+    """Valide l'affichage console du mode config et des ignore files détectés/utilisés."""
+    project_path = tmp_path / 'console_report_project'
+    project_path.mkdir()
+    (project_path / '.aicc.yaml').write_text(
+        "include_patterns:\n"
+        "  - '**/*'\n"
+        "common_filters: []\n"
+        "project_only_filters: []\n"
+        "tree_only_filters: []\n",
+        encoding='utf-8',
+    )
+    (project_path / '.gitignore').write_text("*.log\n", encoding='utf-8')
+    (project_path / '.dockerignore').write_text("cache/\n", encoding='utf-8')
+    (project_path / '.npmignore').write_text("", encoding='utf-8')
+    (project_path / 'cache').mkdir()
+    (project_path / 'cache' / 'tmp.txt').write_text("tmp", encoding='utf-8')
+    (project_path / 'events.log').write_text("entry", encoding='utf-8')
+    (project_path / 'keep.py').write_text("print('ok')\n", encoding='utf-8')
+
+    output_file = tmp_path / 'console_report_output.xml'
+    result = run_aicc(
+        [
+            '--project', str(project_path),
+            '--output', str(output_file),
+            '--no-timestamp',
+            '--format', 'xml',
+            '--no-clipboard',
+        ],
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert "Configuration utilisée :" in result.stdout
+    assert "auto-détectée" in result.stdout
+    assert "Fichiers d'ignore détectés" in result.stdout
+    assert ".gitignore (trouve+utilise)" in result.stdout
+    assert ".dockerignore (trouve+utilise)" in result.stdout
+    assert ".npmignore (trouve+utilise(vide))" in result.stdout

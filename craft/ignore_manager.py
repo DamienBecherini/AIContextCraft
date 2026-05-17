@@ -1,3 +1,5 @@
+import logging
+import os
 from pathlib import Path
 
 import pathspec
@@ -24,14 +26,21 @@ def _parse_ignore_lines(lines):
 
 
 class IgnoreManager:
-    """First-stage filter: security patterns and hierarchical .gitignore files."""
+    """First-stage filter: security patterns and hierarchical ignore files."""
+
+    IGNORE_FILENAMES = (".gitignore", ".dockerignore", ".cursorignore", ".npmignore")
 
     def __init__(self, project_root: Path, *, disabled: bool = False, encoding: str = "utf-8"):
         self.project_root = project_root.resolve()
         self.disabled = disabled
         self.encoding = encoding
         self.security_spec = pathspec.PathSpec.from_lines("gitwildmatch", SECURITY_PATTERNS)
-        self._spec_cache: dict[Path, pathspec.PathSpec | None] = {}
+        self._spec_cache: dict[Path, list[pathspec.PathSpec]] = {}
+        self._detected_ignore_files: set[Path] = set()
+        self._used_ignore_files: set[Path] = set()
+        self._active_ignore_files: set[Path] = set()
+        self._invalid_ignore_files: set[Path] = set()
+        self._scan_detected_ignore_files()
 
     def _relative_posix(self, path: Path) -> str:
         resolved = path.resolve()
@@ -45,22 +54,49 @@ class IgnoreManager:
             return True
         return False
 
-    def _load_gitignore_spec(self, directory: Path) -> pathspec.PathSpec | None:
+    def _scan_detected_ignore_files(self) -> None:
+        for root, _, files in os.walk(self.project_root):
+            for filename in files:
+                if filename in self.IGNORE_FILENAMES:
+                    self._detected_ignore_files.add((Path(root) / filename).resolve())
+
+    def _load_ignore_specs(self, directory: Path) -> list[pathspec.PathSpec]:
         directory = directory.resolve()
         if directory in self._spec_cache:
             return self._spec_cache[directory]
 
-        gitignore_path = directory / ".gitignore"
-        if not gitignore_path.is_file():
-            self._spec_cache[directory] = None
-            return None
+        specs: list[pathspec.PathSpec] = []
+        for ignore_name in self.IGNORE_FILENAMES:
+            ignore_path = (directory / ignore_name).resolve()
+            if not ignore_path.is_file():
+                continue
 
-        with open(gitignore_path, "r", encoding=self.encoding) as f:
-            patterns = _parse_ignore_lines(f.readlines())
+            self._detected_ignore_files.add(ignore_path)
+            self._used_ignore_files.add(ignore_path)
 
-        spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns) if patterns else None
-        self._spec_cache[directory] = spec
-        return spec
+            try:
+                with open(ignore_path, "r", encoding=self.encoding) as f:
+                    patterns = _parse_ignore_lines(f.readlines())
+            except (OSError, UnicodeError) as exc:
+                self._invalid_ignore_files.add(ignore_path)
+                logging.warning("Impossible de lire le fichier d'ignore '%s': %s", ignore_path, exc)
+                continue
+
+            if not patterns:
+                continue
+
+            try:
+                spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+            except Exception as exc:  # pragma: no cover - protection supplémentaire
+                self._invalid_ignore_files.add(ignore_path)
+                logging.warning("Impossible de parser le fichier d'ignore '%s': %s", ignore_path, exc)
+                continue
+
+            specs.append(spec)
+            self._active_ignore_files.add(ignore_path)
+
+        self._spec_cache[directory] = specs
+        return specs
 
     def _ancestor_directories(self, path: Path):
         resolved = path.resolve()
@@ -90,8 +126,8 @@ class IgnoreManager:
             return False
 
         for directory in self._ancestor_directories(path):
-            spec = self._load_gitignore_spec(directory)
-            if spec is None:
+            specs = self._load_ignore_specs(directory)
+            if not specs:
                 continue
             rel_from_dir = self._relative_posix(path)
             if directory != self.project_root:
@@ -102,7 +138,21 @@ class IgnoreManager:
                     rel_from_dir = rel_from_dir[len(prefix) + 1 :]
                 else:
                     continue
-            if self._matches_spec(spec, rel_from_dir, is_dir):
-                return True
+            for spec in specs:
+                if self._matches_spec(spec, rel_from_dir, is_dir):
+                    return True
 
         return False
+
+    def get_ignore_file_report(self) -> list[dict[str, object]]:
+        report = []
+        for ignore_path in sorted(self._detected_ignore_files):
+            report.append(
+                {
+                    "path": ignore_path,
+                    "used": ignore_path in self._used_ignore_files,
+                    "active": ignore_path in self._active_ignore_files,
+                    "invalid": ignore_path in self._invalid_ignore_files,
+                }
+            )
+        return report
