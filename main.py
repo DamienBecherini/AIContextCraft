@@ -1,6 +1,7 @@
 import argparse
 import base64
 import datetime
+import json
 import logging
 import os
 import sys
@@ -90,6 +91,9 @@ def print_ignore_report(console, project_path, ignore_manager, disabled=False):
     header = f"[cyan]Fichiers d'ignore détectés ({ignore_names}) :[/cyan]"
     if disabled:
         header += " [yellow](filtrage ignore désactivé via --no-ignore)[/yellow]"
+    elif ignore_manager.disabled_ignore_types:
+        disabled_types = ", ".join(sorted(ignore_manager.disabled_ignore_types))
+        header += f" [yellow](types désactivés: {disabled_types})[/yellow]"
     console.print(header)
 
     if not ignore_report:
@@ -111,10 +115,64 @@ def print_ignore_report(console, project_path, ignore_manager, disabled=False):
             status = "trouve+utilise(vide)"
         elif disabled:
             status = "trouve+non_utilise(desactive)"
+        elif (
+            IgnoreManager.resolve_ignore_type(ignore_path.name)
+            in ignore_manager.disabled_ignore_types
+        ):
+            status = "trouve+non_utilise(desactive_type)"
         else:
             status = "trouve+non_utilise"
 
         console.print(f"  - {rel_path} ({status})")
+
+
+def parse_ignore_type_values(raw_value, parser, flag_name):
+    if not raw_value:
+        return set()
+
+    values = [item.strip().lower() for item in raw_value.split(",") if item.strip()]
+    if not values:
+        return set()
+
+    valid_types = set(IgnoreManager.IGNORE_TYPE_TO_FILENAME.keys())
+    invalid = sorted({value for value in values if value not in valid_types})
+    if invalid:
+        parser.error(
+            f"{flag_name}: type(s) invalide(s): {', '.join(invalid)}. "
+            f"Valeurs autorisées: {', '.join(sorted(valid_types))}."
+        )
+    return set(values)
+
+
+def build_execution_report(
+    *,
+    status,
+    mode,
+    output_format,
+    output_destination,
+    output_file,
+    log_file,
+    stats,
+    dry_run,
+    no_ignore,
+    disabled_ignore_types,
+):
+    return {
+        "status": status,
+        "mode": mode,
+        "output_format": output_format,
+        "output_destination": output_destination,
+        "output_file": str(output_file) if output_file else None,
+        "log_file": str(log_file) if log_file else None,
+        "stats": stats,
+        "dry_run": dry_run,
+        "ignore_files_disabled_globally": no_ignore,
+        "ignore_file_types_disabled": sorted(disabled_ignore_types),
+    }
+
+
+def emit_json_report(report):
+    sys.stdout.write(json.dumps(report, ensure_ascii=False) + "\n")
 
 
 def main():
@@ -129,12 +187,49 @@ def main():
     parser.add_argument('--tree-only', action='store_true', help="Génère uniquement l'arbre du projet (tailles, extensions) sans le contenu des fichiers.")
     parser.add_argument('--dry-run', action='store_true', help="Simule l'opération sans écrire de fichier.")
     parser.add_argument('--encoding', type=str, default='utf-8', help="Encodage des fichiers (défaut: utf-8).")
-    parser.add_argument('--no-ignore', action='store_true', help="Désactive les .gitignore hiérarchiques (les règles de sécurité restent actives).")
+    parser.add_argument(
+        '--no-ignore',
+        action='store_true',
+        help=(
+            "Désactive tous les ignore files hiérarchiques "
+            "(.gitignore, .dockerignore, .cursorignore, .npmignore) "
+            "(les règles de sécurité restent actives)."
+        ),
+    )
+    parser.add_argument(
+        '--skip-ignore-files',
+        type=str,
+        help=(
+            "Désactive sélectivement certains types d'ignore files "
+            "(valeurs: gitignore,dockerignore,cursorignore,npmignore)."
+        ),
+    )
+    parser.add_argument(
+        '--ignore-files',
+        type=str,
+        help=(
+            "Active uniquement les types listés (valeurs: gitignore,dockerignore,cursorignore,npmignore). "
+            "Alias inverse de --skip-ignore-files."
+        ),
+    )
     parser.add_argument('--git-diff', nargs=2, metavar=('REF_A', 'REF_B'), help="Mode spécial: génère un rapport Markdown du diff Git global entre deux révisions.")
     parser.add_argument('--format', choices=['text', 'xml', 'markdown'], default='xml', help="Format de sortie: xml (défaut), text ou markdown.")
+    parser.add_argument(
+        '--output-format',
+        choices=['human', 'json'],
+        default='human',
+        help="Format des messages d'exécution: human (défaut) ou json (stdout structuré).",
+    )
+    parser.add_argument(
+        '--output-destination',
+        choices=['file', 'stdout', 'both', 'none'],
+        default='file',
+        help="Destination du contenu généré: file (défaut), stdout, both ou none.",
+    )
     parser.add_argument('-cb', '--clipboard-limit', type=float, default=10.0, metavar='MB', help="Taille maximum en Mo pour la copie automatique dans le presse-papiers (défaut: 10.0).")
     parser.add_argument('--no-clipboard', action='store_true', help="Désactive totalement la copie automatique dans le presse-papiers.")
     parser.add_argument('-v', '--verbose', action='store_true', help="Affiche des informations détaillées sur la console.")
+    parser.add_argument('-q', '--quiet', action='store_true', help="Réduit les logs console au strict minimum (erreurs).")
     args = parser.parse_args()
 
     DEFAULT_CONFIG = {
@@ -148,6 +243,10 @@ def main():
 
     if args.clipboard_limit < 0:
         parser.error("--clipboard-limit doit être >= 0.")
+    if args.verbose and args.quiet:
+        parser.error("--verbose et --quiet sont incompatibles.")
+    if args.skip_ignore_files and args.ignore_files:
+        parser.error("--skip-ignore-files et --ignore-files sont incompatibles.")
 
     config = DEFAULT_CONFIG.copy()
     config_path = None
@@ -176,7 +275,7 @@ def main():
                 break
         if config_path is None:
             config_source = "auto_missing"
-            logging.info("Aucun fichier de configuration trouvé. Mode Zero-Config activé (basé sur les .gitignore).")
+            logging.info("Aucun fichier de configuration trouvé. Mode Zero-Config activé (basé sur les ignore files hiérarchiques).")
 
     if config_path is not None:
         try:
@@ -192,10 +291,10 @@ def main():
             sys.exit(f"ERREUR: Impossible de parser le fichier de configuration '{config_path}': {e}{error_help}")
 
     project_path = Path(args.project or config.get('project_path', '.')).resolve()
-    output_format = args.format or config.get('output_format', 'xml')
-    if output_format not in {'text', 'xml', 'markdown'}:
-        logging.warning(f"Format de sortie inconnu '{output_format}' dans la configuration. Fallback vers 'xml'.")
-        output_format = 'xml'
+    content_format = args.format or config.get('output_format', 'xml')
+    if content_format not in {'text', 'xml', 'markdown'}:
+        logging.warning(f"Format de sortie inconnu '{content_format}' dans la configuration. Fallback vers 'xml'.")
+        content_format = 'xml'
 
     output_path_str = args.output or config.get('output_path')
     if not output_path_str:
@@ -204,7 +303,7 @@ def main():
             'xml': 'xml',
             'markdown': 'md',
         }
-        output_path_str = f"./build/aicc_context.{default_extension_by_format[output_format]}"
+        output_path_str = f"./build/aicc_context.{default_extension_by_format[content_format]}"
         logging.info("Aucun chemin de sortie fourni. Utilisation du chemin par défaut: '%s'", output_path_str)
 
     output_path = Path(output_path_str)
@@ -212,19 +311,21 @@ def main():
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         output_path = output_path.with_name(f"{output_path.stem}_{timestamp}{output_path.suffix}")
 
-    log_path = output_path.with_suffix('.log')
-    setup_logging(log_path, args.verbose)
+    write_log_file = args.output_format == "human" or args.output_destination in {"file", "both"}
+    log_path = output_path.with_suffix('.log') if write_log_file else None
+    setup_logging(log_path, args.verbose, quiet=args.quiet, enable_file_logging=write_log_file)
 
     if args.dry_run:
         console.print("[bold yellow]--- MODE DRY RUN ACTIVÉ : AUCUN FICHIER NE SERA ÉCRIT ---[/bold yellow]")
     if config_path is not None:
         logging.info(f"Configuration chargée et fusionnée depuis '{config_path}'")
-    print_config_resolution_status(console, config_path, config_source, explicit_config_path)
+    if args.output_format == "human" and not args.quiet:
+        print_config_resolution_status(console, config_path, config_source, explicit_config_path)
 
     if args.git_diff:
-        if output_format != 'markdown':
+        if content_format != 'markdown':
             logging.info(
-                f"Mode --git-diff: le format '{output_format}' est ignoré, sortie Markdown forcée."
+                f"Mode --git-diff: le format '{content_format}' est ignoré, sortie Markdown forcée."
             )
         ref_a, ref_b = args.git_diff
         logging.info(f"Mode --git-diff activé: calcul du diff entre '{ref_a}' et '{ref_b}'")
@@ -255,19 +356,42 @@ def main():
             output_path = output_path.with_suffix('.md')
             log_path = output_path.with_suffix('.log')
 
-        if not args.dry_run:
+        if args.output_format == "human" and args.output_destination in {"stdout", "both"}:
+            sys.stdout.write(final_output_str)
+            if not final_output_str.endswith("\n"):
+                sys.stdout.write("\n")
+
+        if not args.dry_run and args.output_destination in {"file", "both"}:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             with open(output_path, 'w', encoding=args.encoding) as f:
                 f.write(final_output_str)
-            console.print("\n[bold green]Opération terminée.[/bold green]")
-            console.print(f"[cyan]Fichier de sortie généré :[/cyan] {output_path.resolve()}")
-        else:
+            if args.output_format == "human" and not args.quiet:
+                console.print("\n[bold green]Opération terminée.[/bold green]")
+                console.print(f"[cyan]Fichier de sortie généré :[/cyan] {output_path.resolve()}")
+        elif args.dry_run and args.output_format == "human" and not args.quiet:
             console.print("\n[bold yellow]Opération (dry run) terminée.[/bold yellow]")
             console.print(f"[cyan]Le fichier de sortie aurait été :[/cyan] {output_path.resolve()}")
 
-        maybe_copy_to_clipboard(should_copy_to_clipboard(args, final_output_str, console), final_output_str, console)
-        console.print(f"[cyan]Fichier de log généré :[/cyan] {log_path.resolve()}")
-        console.print(f"[magenta]Statistiques finales :[/magenta] {stats}")
+        if args.output_destination != "none":
+            maybe_copy_to_clipboard(should_copy_to_clipboard(args, final_output_str, console), final_output_str, console)
+        report = build_execution_report(
+            status="success",
+            mode="git_diff",
+            output_format=content_format,
+            output_destination=args.output_destination,
+            output_file=output_path if args.output_destination in {"file", "both"} else None,
+            log_file=log_path,
+            stats=stats,
+            dry_run=args.dry_run,
+            no_ignore=args.no_ignore,
+            disabled_ignore_types=set(),
+        )
+        if args.output_format == "json":
+            emit_json_report(report)
+        elif not args.quiet:
+            if log_path is not None:
+                console.print(f"[cyan]Fichier de log généré :[/cyan] {log_path.resolve()}")
+            console.print(f"[magenta]Statistiques finales :[/magenta] {stats}")
         return
 
     logging.info("Assemblage des filtres...")
@@ -291,13 +415,34 @@ def main():
     final_project_filters.append(auto_exclude_pattern)
     final_tree_filters.append(auto_exclude_pattern)
 
+    disabled_ignore_types = set()
+    if args.skip_ignore_files:
+        disabled_ignore_types = parse_ignore_type_values(
+            args.skip_ignore_files, parser, "--skip-ignore-files"
+        )
+    elif args.ignore_files:
+        enabled_types = parse_ignore_type_values(args.ignore_files, parser, "--ignore-files")
+        all_types = set(IgnoreManager.IGNORE_TYPE_TO_FILENAME.keys())
+        disabled_ignore_types = all_types - enabled_types
+
+    if args.no_ignore:
+        disabled_ignore_types = set(IgnoreManager.IGNORE_TYPE_TO_FILENAME.keys())
+
     ignore_manager = IgnoreManager(
-        project_path, disabled=args.no_ignore, encoding=args.encoding
+        project_path,
+        disabled=args.no_ignore,
+        disabled_ignore_types=disabled_ignore_types,
+        encoding=args.encoding,
     )
     if args.no_ignore:
         logging.info(
             "Bouclier natif : ignore files (%s) désactivés (--no-ignore), règles de sécurité actives.",
             ", ".join(ignore_manager.IGNORE_FILENAMES),
+        )
+    elif disabled_ignore_types:
+        logging.info(
+            "Bouclier natif : types d'ignore files désactivés: %s",
+            ", ".join(sorted(disabled_ignore_types)),
         )
     else:
         logging.info(
@@ -382,7 +527,7 @@ def main():
 
         logging.info("Assemblage du fichier de sortie...")
         full_body = build_output(
-            output_format,
+            content_format,
             project_tree,
             extension_summary,
             files_data,
@@ -392,7 +537,7 @@ def main():
     else:
         logging.info("Mode --tree-only activé : saut de la lecture du contenu des fichiers.")
         full_body = build_output(
-            output_format,
+            content_format,
             project_tree,
             extension_summary,
             files_data,
@@ -407,20 +552,45 @@ def main():
         full_body
     ])
 
-    if not args.dry_run:
+    if args.output_format == "human" and args.output_destination in {"stdout", "both"}:
+        sys.stdout.write(final_output_str)
+        if not final_output_str.endswith("\n"):
+            sys.stdout.write("\n")
+
+    if not args.dry_run and args.output_destination in {"file", "both"}:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, 'w', encoding=args.encoding) as f:
             f.write(final_output_str)
-        console.print("\n[bold green]Opération terminée.[/bold green]")
-        console.print(f"[cyan]Fichier de sortie généré :[/cyan] {output_path.resolve()}")
-    else:
+        if args.output_format == "human" and not args.quiet:
+            console.print("\n[bold green]Opération terminée.[/bold green]")
+            console.print(f"[cyan]Fichier de sortie généré :[/cyan] {output_path.resolve()}")
+    elif args.dry_run and args.output_format == "human" and not args.quiet:
         console.print("\n[bold yellow]Opération (dry run) terminée.[/bold yellow]")
         console.print(f"[cyan]Le fichier de sortie aurait été :[/cyan] {output_path.resolve()}")
 
-    maybe_copy_to_clipboard(should_copy_to_clipboard(args, final_output_str, console), final_output_str, console)
-    print_ignore_report(console, project_path, ignore_manager, disabled=args.no_ignore)
-    console.print(f"[cyan]Fichier de log généré :[/cyan] {log_path.resolve()}")
-    console.print(f"[magenta]Statistiques finales :[/magenta] {stats}")
+    if args.output_destination != "none":
+        maybe_copy_to_clipboard(should_copy_to_clipboard(args, final_output_str, console), final_output_str, console)
+    report = build_execution_report(
+        status="success",
+        mode="standard",
+        output_format=content_format,
+        output_destination=args.output_destination,
+        output_file=output_path if args.output_destination in {"file", "both"} else None,
+        log_file=log_path,
+        stats=stats,
+        dry_run=args.dry_run,
+        no_ignore=args.no_ignore,
+        disabled_ignore_types=disabled_ignore_types,
+    )
+    if args.output_format == "json":
+        emit_json_report(report)
+        return
+
+    if not args.quiet:
+        print_ignore_report(console, project_path, ignore_manager, disabled=args.no_ignore)
+        if log_path is not None:
+            console.print(f"[cyan]Fichier de log généré :[/cyan] {log_path.resolve()}")
+        console.print(f"[magenta]Statistiques finales :[/magenta] {stats}")
 
 
 if __name__ == '__main__':

@@ -53,6 +53,20 @@ def test_additional_ignore_files_are_applied(tmp_path):
     assert not manager.is_ignored(project / "src" / "ok.py")
 
 
+def test_selective_disabled_ignore_types(tmp_path):
+    project = tmp_path / "selective_ignore_project"
+    project.mkdir()
+    (project / ".gitignore").write_text("*.log\n", encoding="utf-8")
+    (project / ".dockerignore").write_text("cache/\n", encoding="utf-8")
+    (project / "events.log").write_text("entry", encoding="utf-8")
+    (project / "cache").mkdir()
+    (project / "cache" / "tmp.txt").write_text("tmp", encoding="utf-8")
+
+    manager = IgnoreManager(project, disabled_ignore_types={"gitignore"})
+    assert not manager.is_ignored(project / "events.log")
+    assert manager.is_ignored(project / "cache" / "tmp.txt")
+
+
 def test_ignore_report_tracks_detected_and_used_files(tmp_path):
     project = tmp_path / "ignore_report_project"
     project.mkdir()

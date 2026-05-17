@@ -1,6 +1,7 @@
 # tests/test_aicc.py
 
 import os
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -289,6 +290,91 @@ def test_nested_gitignore_and_security_patterns(tmp_path):
     assert '--- FICHIER: frontend/node_modules/pkg/index.js' in content_no_ignore
     assert '--- FICHIER: .env.local' not in content_no_ignore
     assert 'FAKE_SECRET' not in content_no_ignore
+
+
+def test_skip_ignore_files_disables_only_selected_types(tmp_path):
+    project_path = tmp_path / 'skip_ignore_types_project'
+    project_path.mkdir()
+    (project_path / '.gitignore').write_text('*.log\n', encoding='utf-8')
+    (project_path / '.dockerignore').write_text('cache/\n', encoding='utf-8')
+    (project_path / 'events.log').write_text('entry\n', encoding='utf-8')
+    (project_path / 'cache').mkdir()
+    (project_path / 'cache' / 'tmp.txt').write_text('tmp\n', encoding='utf-8')
+    (project_path / 'keep.py').write_text("print('ok')\n", encoding='utf-8')
+
+    output_file = tmp_path / 'skip_ignore_types_output.xml'
+    result = run_aicc(
+        [
+            '--project', str(project_path),
+            '--output', str(output_file),
+            '--no-timestamp',
+            '--format', 'xml',
+            '--skip-ignore-files', 'gitignore',
+            '--no-clipboard',
+        ],
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    content = output_file.read_text(encoding='utf-8')
+    assert '<file path="events.log">' in content
+    assert '<file path="cache/tmp.txt">' not in content
+
+
+def test_ignore_files_keeps_only_listed_types(tmp_path):
+    project_path = tmp_path / 'keep_only_ignore_types_project'
+    project_path.mkdir()
+    (project_path / '.gitignore').write_text('*.log\n', encoding='utf-8')
+    (project_path / '.dockerignore').write_text('cache/\n', encoding='utf-8')
+    (project_path / 'events.log').write_text('entry\n', encoding='utf-8')
+    (project_path / 'cache').mkdir()
+    (project_path / 'cache' / 'tmp.txt').write_text('tmp\n', encoding='utf-8')
+    (project_path / 'keep.py').write_text("print('ok')\n", encoding='utf-8')
+
+    output_file = tmp_path / 'keep_only_ignore_types_output.xml'
+    result = run_aicc(
+        [
+            '--project', str(project_path),
+            '--output', str(output_file),
+            '--no-timestamp',
+            '--format', 'xml',
+            '--ignore-files', 'dockerignore',
+            '--no-clipboard',
+        ],
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    content = output_file.read_text(encoding='utf-8')
+    assert '<file path="events.log">' in content
+    assert '<file path="cache/tmp.txt">' not in content
+
+
+def test_output_json_stdout_without_file_creation(tmp_path):
+    project_path = tmp_path / 'json_stdout_project'
+    project_path.mkdir()
+    (project_path / 'keep.py').write_text("print('ok')\n", encoding='utf-8')
+
+    output_file = tmp_path / 'json_stdout_output.xml'
+    result = run_aicc(
+        [
+            '--project', str(project_path),
+            '--output', str(output_file),
+            '--no-timestamp',
+            '--format', 'xml',
+            '--output-format', 'json',
+            '--output-destination', 'stdout',
+            '--no-clipboard',
+        ],
+        cwd=tmp_path,
+    )
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert not output_file.exists(), "Le fichier de sortie ne doit pas être créé en mode stdout."
+    payload = json.loads(result.stdout.strip().splitlines()[-1])
+    assert payload['status'] == 'success'
+    assert payload['output_destination'] == 'stdout'
+    assert payload['output_file'] is None
 
 
 def test_git_diff_mode_with_invalid_ref_fails(tmp_path):

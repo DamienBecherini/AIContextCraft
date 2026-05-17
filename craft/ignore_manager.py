@@ -29,10 +29,25 @@ class IgnoreManager:
     """First-stage filter: security patterns and hierarchical ignore files."""
 
     IGNORE_FILENAMES = (".gitignore", ".dockerignore", ".cursorignore", ".npmignore")
+    IGNORE_TYPE_TO_FILENAME = {
+        "gitignore": ".gitignore",
+        "dockerignore": ".dockerignore",
+        "cursorignore": ".cursorignore",
+        "npmignore": ".npmignore",
+    }
+    FILENAME_TO_IGNORE_TYPE = {v: k for k, v in IGNORE_TYPE_TO_FILENAME.items()}
 
-    def __init__(self, project_root: Path, *, disabled: bool = False, encoding: str = "utf-8"):
+    def __init__(
+        self,
+        project_root: Path,
+        *,
+        disabled: bool = False,
+        disabled_ignore_types: set[str] | None = None,
+        encoding: str = "utf-8",
+    ):
         self.project_root = project_root.resolve()
         self.disabled = disabled
+        self.disabled_ignore_types = set(disabled_ignore_types or set())
         self.encoding = encoding
         self.security_spec = pathspec.PathSpec.from_lines("gitwildmatch", SECURITY_PATTERNS)
         self._spec_cache: dict[Path, list[pathspec.PathSpec]] = {}
@@ -41,6 +56,18 @@ class IgnoreManager:
         self._active_ignore_files: set[Path] = set()
         self._invalid_ignore_files: set[Path] = set()
         self._scan_detected_ignore_files()
+
+    @property
+    def enabled_ignore_filenames(self) -> tuple[str, ...]:
+        enabled = []
+        for ignore_type, filename in self.IGNORE_TYPE_TO_FILENAME.items():
+            if ignore_type not in self.disabled_ignore_types:
+                enabled.append(filename)
+        return tuple(enabled)
+
+    @classmethod
+    def resolve_ignore_type(cls, filename: str) -> str | None:
+        return cls.FILENAME_TO_IGNORE_TYPE.get(filename)
 
     def _relative_posix(self, path: Path) -> str:
         resolved = path.resolve()
@@ -66,7 +93,7 @@ class IgnoreManager:
             return self._spec_cache[directory]
 
         specs: list[pathspec.PathSpec] = []
-        for ignore_name in self.IGNORE_FILENAMES:
+        for ignore_name in self.enabled_ignore_filenames:
             ignore_path = (directory / ignore_name).resolve()
             if not ignore_path.is_file():
                 continue

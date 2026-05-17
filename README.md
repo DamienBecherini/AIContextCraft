@@ -26,9 +26,10 @@ Stop manually copying and pasting files and start crafting the perfect context i
     *   `--headers-only`: Create a high-level summary of your code by extracting only class and function signatures and their docstrings.
 *   **Customizable Project Tree Generation**: Automatically generate a filtered file tree with sizes, per-extension totals, and visual markers (`●` concatenated, `○` tree-only via `project_only_filters`) to give the LLM a clear overview of the project structure.
 *   **Two-Stage Filtering (Shield + Scalpel)**:
-    *   **Stage 1 (Shield, on by default):** Hierarchical `.gitignore` files are applied during directory traversal for fast pruning, plus hardcoded security patterns (`.env`, `.env.*`, `*.pem`, `*.key`, `.git/`) that always apply.
+    *   **Stage 1 (Shield, on by default):** Hierarchical ignore files (`.gitignore`, `.dockerignore`, `.cursorignore`, `.npmignore`) are applied during directory traversal for fast pruning, plus hardcoded security patterns (`.env`, `.env.*`, `*.pem`, `*.key`, `.git/`) that always apply.
     *   **Stage 2 (Scalpel):** YAML `include_patterns` and exclusion filters refine what remains.
-    *   Use `--no-ignore` to disable `.gitignore` matching while keeping security exclusions.
+    *   Use `--no-ignore` to disable all hierarchical ignore files while keeping security exclusions.
+    *   Use `--skip-ignore-files` or `--ignore-files` for selective control by ignore type.
 *   **Built-in Utilities**:
     *   Automatic token and size calculation with `tiktoken`.
     *   Verbose logging for easy debugging.
@@ -87,22 +88,31 @@ python main.py -p /path/to/your/project -o /path/to/output/context.txt
 | `-o`, `--output`     | Path for the generated output file.                                       |
 | `--strip-comments`   | Remove comments and docstrings from code files.                           |
 | `--headers-only`     | Extract only function/class signatures and docstrings from Python files.  |
-| `--no-ignore`        | Disable hierarchical `.gitignore` filtering (security patterns still apply). |
+| `--no-ignore`        | Disable all hierarchical ignore files (`.gitignore`, `.dockerignore`, `.cursorignore`, `.npmignore`) while security patterns still apply. |
+| `--skip-ignore-files TYPES` | Disable only selected ignore types (`gitignore,dockerignore,cursorignore,npmignore`). |
+| `--ignore-files TYPES` | Enable only selected ignore types (inverse alias of `--skip-ignore-files`). |
 | `--git-diff REF_A REF_B` | Generate a Markdown report with the global Git diff between two revisions. |
 | `--format {text,xml,markdown}` | Choose output format (`xml` default, or `text`/`markdown`). |
+| `--output-format {human,json}` | Execution reporting mode (`human` default, `json` for bot-friendly automation). |
+| `--output-destination {file,stdout,both,none}` | Where generated content is written (`file` default). |
 | `-cb MB`, `--clipboard-limit MB` | Maximum size in MB for automatic clipboard copy (default: `10.0`). |
 | `--no-clipboard` | Disable automatic clipboard copy completely. |
 | `--no-timestamp`     | Do not append a timestamp to the output filename.                         |
 | `--dry-run`          | Run the script without writing any files to see what would be included.   |
 | `-v`, `--verbose`    | Print detailed processing information to the console.                     |
+| `-q`, `--quiet`      | Minimize console logs (errors only).                                      |
 
 #### CLI Help Snapshot (`python main.py --help`)
 
 ```text
 usage: main.py [-h] [-c CONFIG] [-p PROJECT] [-o OUTPUT] [--no-timestamp]
                [--strip-comments] [--headers-only] [--tree-only] [--dry-run]
-               [--encoding ENCODING] [--no-ignore] [--git-diff REF_A REF_B]
-               [--format {text,xml,markdown}] [-cb MB] [--no-clipboard] [-v]
+               [--encoding ENCODING] [--no-ignore]
+               [--skip-ignore-files SKIP_IGNORE_FILES]
+               [--ignore-files IGNORE_FILES] [--git-diff REF_A REF_B]
+               [--format {text,xml,markdown}] [--output-format {human,json}]
+               [--output-destination {file,stdout,both,none}] [-cb MB]
+               [--no-clipboard] [-v] [-q]
 
 options:
   -h, --help            show this help message and exit
@@ -118,20 +128,29 @@ options:
   --tree-only           Generate only project tree (sizes/extensions), without file contents.
   --dry-run             Simulate run without writing output file.
   --encoding ENCODING   File encoding (default: utf-8).
-  --no-ignore           Disable hierarchical .gitignore filtering (security rules still apply).
+  --no-ignore           Disable all hierarchical ignore files (.gitignore, .dockerignore, .cursorignore, .npmignore), security rules still apply.
+  --skip-ignore-files SKIP_IGNORE_FILES
+                        Disable only listed ignore types.
+  --ignore-files IGNORE_FILES
+                        Keep only listed ignore types (inverse alias).
   --git-diff REF_A REF_B
                         Special mode: generate global Git diff Markdown report between two revisions.
   --format {text,xml,markdown}
                         Output format: xml (default), text or markdown.
+  --output-format {human,json}
+                        Execution report format.
+  --output-destination {file,stdout,both,none}
+                        Where generated content is written.
   -cb MB, --clipboard-limit MB
                         Maximum size in MB for automatic clipboard copy (default: 10.0).
   --no-clipboard        Disable automatic clipboard copy.
   -v, --verbose         Print detailed processing information.
+  -q, --quiet           Minimize console logs (errors only).
 ```
 
 ### Example Workflow
 
-Generate a context for a Python project with comments stripped (`.gitignore` and security filters apply by default):
+Generate a context for a Python project with comments stripped (hierarchical ignore files and security filters apply by default):
 
 ```bash
 python main.py --project ./my-python-app --strip-comments -v
@@ -140,6 +159,12 @@ python main.py --project ./my-python-app --strip-comments -v
 On large repositories (Node, Python, etc.), ignored folders such as `node_modules/` or `.venv/` are pruned during traversal before YAML filters run, which speeds up scanning significantly.
 
 This creates a file in `build/` (default `build/aicc_context.xml`) containing the project tree and the cleaned content of all relevant files.
+
+Bot-friendly JSON execution report to `stdout` without creating output files:
+
+```bash
+python main.py --project ./my-python-app --output-format json --output-destination stdout --no-clipboard
+```
 
 Generate a dedicated Markdown diff report (without running the standard concatenation flow):
 
