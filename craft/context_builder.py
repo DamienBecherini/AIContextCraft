@@ -4,6 +4,7 @@ import os
 import sys
 from pathlib import Path
 
+from rich.console import Console
 from rich.progress import track
 
 from craft.file_processor import get_python_headers, strip_comments_from_code
@@ -23,6 +24,7 @@ class ContextBuilder:
         encoding: str,
         args: argparse.Namespace,
         full_body_filters: list[str],
+        console: Console,
     ) -> None:
         self.project_path = project_path
         self.filter_manager = filter_manager
@@ -30,6 +32,7 @@ class ContextBuilder:
         self.encoding = encoding
         self.args = args
         self.full_body_filters = full_body_filters
+        self.console = console
 
     def _gather_files(self) -> list[Path]:
         logging.info("Recherche optimisée des fichiers (avec élagage des dossiers exclus)...")
@@ -66,7 +69,8 @@ class ContextBuilder:
         file_iterator = track(
             final_file_list,
             description="Traitement des fichiers...",
-            disable=not sys.stdout.isatty(),
+            console=self.console,
+            disable=not sys.stderr.isatty() or self.args.output_format == "json",
         )
         for file_path in file_iterator:
             relative_path_str = str(file_path.relative_to(self.project_path)).replace('\\', '/')

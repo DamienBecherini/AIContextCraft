@@ -1,5 +1,7 @@
 import argparse
 
+from rich.console import Console
+
 from craft.context_builder import ContextBuilder
 from craft.filter_manager import FilterManager
 from craft.ignore_manager import IgnoreManager
@@ -17,7 +19,13 @@ def _build_context_builder(project_path, encoding: str = "utf-8") -> ContextBuil
         output_path=project_path / "output.md",
     )
     ignore_manager = IgnoreManager(project_path)
-    args = argparse.Namespace(headers_only=False, strip_comments=False, tree_only=False)
+    args = argparse.Namespace(
+        headers_only=False,
+        strip_comments=False,
+        tree_only=False,
+        output_format="human",
+    )
+    console = Console(stderr=True)
     return ContextBuilder(
         project_path=project_path,
         filter_manager=filter_manager,
@@ -25,6 +33,7 @@ def _build_context_builder(project_path, encoding: str = "utf-8") -> ContextBuil
         encoding=encoding,
         args=args,
         full_body_filters=[],
+        console=console,
     )
 
 

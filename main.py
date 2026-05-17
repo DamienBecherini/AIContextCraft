@@ -183,7 +183,7 @@ def emit_json_report(report: dict[str, Any]) -> None:
 
 
 def main():
-    console = Console()
+    console = Console(stderr=True)
     parser = argparse.ArgumentParser(description="Agrège les fichiers d'un projet en un seul fichier texte pour une IA.")
     parser.add_argument('-c', '--config', type=str, help="Chemin vers le fichier de configuration YAML.")
     parser.add_argument('-p', '--project', type=str, help="Chemin vers le projet cible.")
@@ -322,7 +322,7 @@ def main():
     log_path = output_path.with_suffix('.log') if write_log_file else None
     setup_logging(log_path, args.verbose, quiet=args.quiet, enable_file_logging=write_log_file)
 
-    if args.dry_run:
+    if args.dry_run and args.output_format != "json":
         console.print("[bold yellow]--- MODE DRY RUN ACTIVÉ : AUCUN FICHIER NE SERA ÉCRIT ---[/bold yellow]")
     if config_path is not None:
         logging.info(f"Configuration chargée et fusionnée depuis '{config_path}'")
@@ -447,14 +447,16 @@ def main():
     logging.info(f"  - FILTRES D'EXCLUSION (ARBRE): {filter_manager.tree_filters}")
     logging.info("="*50)
 
-    console.print("[bold]Concaténation des fichiers...[/bold]")
+    if args.output_format != "json" and not args.quiet:
+        console.print("[bold]Concaténation des fichiers...[/bold]")
     builder = ContextBuilder(
-        project_path,
-        filter_manager,
-        ignore_manager,
-        args.encoding,
-        args,
-        full_body_filters,
+        project_path=project_path,
+        filter_manager=filter_manager,
+        ignore_manager=ignore_manager,
+        encoding=args.encoding,
+        args=args,
+        full_body_filters=full_body_filters,
+        console=console,
     )
     project_tree, extension_summary, files_data = builder.build()
 

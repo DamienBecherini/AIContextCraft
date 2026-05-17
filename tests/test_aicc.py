@@ -539,7 +539,7 @@ def test_clipboard_limit_skips_copy_when_output_is_too_large(tmp_path):
     result = run_aicc(args)
 
     assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
-    assert "dépasse la limite du presse-papiers" in result.stdout
+    assert "dépasse la limite du presse-papiers" in result.stderr
     assert "Contenu copié dans le presse-papiers." not in result.stdout
     assert "Contenu envoyé au presse-papiers via SSH (OSC 52)." not in result.stdout
 
@@ -673,9 +673,9 @@ def test_console_reports_config_and_ignore_usage(tmp_path):
     )
 
     assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
-    assert "Configuration utilisée :" in result.stdout
-    assert "auto-détectée" in result.stdout
-    assert "Fichiers d'ignore détectés" in result.stdout
-    assert ".gitignore (trouve+utilise)" in result.stdout
-    assert ".dockerignore (trouve+utilise)" in result.stdout
-    assert ".npmignore (trouve+utilise(vide))" in result.stdout
+    assert "Configuration utilisée :" in result.stderr
+    assert "auto-détectée" in result.stderr
+    assert "Fichiers d'ignore détectés" in result.stderr
+    assert ".gitignore (trouve+utilise)" in result.stderr
+    assert ".dockerignore (trouve+utilise)" in result.stderr
+    assert ".npmignore (trouve+utilise(vide))" in result.stderr
