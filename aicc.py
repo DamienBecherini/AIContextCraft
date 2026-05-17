@@ -6,6 +6,7 @@ import io
 import sys
 import tokenize
 import logging
+import subprocess
 from pathlib import Path
 import yaml
 import pathspec
@@ -240,6 +241,36 @@ def normalize_glob_patterns(patterns):
         normalized.append(cleaned.replace('\\', '/'))
     return normalized
 
+
+def get_git_diff(repo_path, ref_a, ref_b):
+    """Récupère le diff Git brut entre deux révisions."""
+    try:
+        subprocess.run(
+            ['git', 'rev-parse', '--is-inside-work-tree'],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+    except FileNotFoundError as e:
+        raise RuntimeError("Git n'est pas installé ou n'est pas disponible dans le PATH.") from e
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Le chemin '{repo_path}' n'est pas un dépôt Git valide.") from e
+
+    try:
+        result = subprocess.run(
+            ['git', 'diff', ref_a, ref_b],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        stderr = (e.stderr or "").strip()
+        message = stderr if stderr else f"Impossible de calculer le diff entre '{ref_a}' et '{ref_b}'."
+        raise RuntimeError(message) from e
+
 # --- Fonction principale ---
 
 def main():
@@ -255,6 +286,7 @@ def main():
     parser.add_argument('--dry-run', action='store_true', help="Simule l'opération sans écrire de fichier.")
     parser.add_argument('--encoding', type=str, default='utf-8', help="Encodage des fichiers (défaut: utf-8).")
     parser.add_argument('--use-gitignore', action='store_true', help="Utilise le .gitignore du projet pour filtrer les fichiers.")
+    parser.add_argument('--git-diff', nargs=2, metavar=('REF_A', 'REF_B'), help="Mode spécial: génère un rapport Markdown du diff Git global entre deux révisions.")
     parser.add_argument('-v', '--verbose', action='store_true', help="Affiche des informations détaillées sur la console.")
     args = parser.parse_args()
 
@@ -302,6 +334,50 @@ def main():
         logging.info(f"Fichier de configuration par défaut créé à '{config_path}'")
     else:
         logging.info(f"Configuration chargée et fusionnée depuis '{config_path}'")
+
+    if args.git_diff:
+        ref_a, ref_b = args.git_diff
+        logging.info(f"Mode --git-diff activé: calcul du diff entre '{ref_a}' et '{ref_b}'")
+        try:
+            diff_content = get_git_diff(project_path, ref_a, ref_b)
+        except RuntimeError as e:
+            logging.error(str(e))
+            sys.exit(str(e))
+
+        if not diff_content.strip():
+            diff_content = "Aucune différence détectée entre ces révisions.\n"
+
+        full_body = (
+            f"# Diff Git: {ref_a} -> {ref_b}\n\n"
+            "```diff\n"
+            f"{diff_content}"
+            "```\n"
+        )
+        stats = get_file_stats(full_body, args.encoding)
+        final_output_str = "".join([
+            "Ce fichier est un rapport de diff Git généré par AI Context Craft.\n",
+            f"Date de génération : {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
+            f"Statistiques du contenu : {stats}\n\n",
+            full_body
+        ])
+
+        if output_path.suffix.lower() == '.txt':
+            output_path = output_path.with_suffix('.md')
+            log_path = output_path.with_suffix('.log')
+
+        if not args.dry_run:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, 'w', encoding=args.encoding) as f:
+                f.write(final_output_str)
+            print("\nOpération terminée.")
+            print(f"Fichier de sortie généré : {output_path.resolve()}")
+        else:
+            print("\nOpération (dry run) terminée.")
+            print(f"Le fichier de sortie aurait été : {output_path.resolve()}")
+
+        print(f"Fichier de log généré : {log_path.resolve()}")
+        print(f"Statistiques finales : {stats}")
+        return
 
     logging.info("Assemblage des filtres...")
     def clean_patterns(patterns):

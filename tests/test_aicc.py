@@ -154,3 +154,69 @@ def test_invalid_yaml_backslash_error_has_guidance(tmp_path):
     assert "Impossible de parser le fichier de configuration" in result.stderr
     assert "Préférez '/' au lieu de '\\'" in result.stderr
     assert "quotes simples" in result.stderr
+
+
+def init_git_repo_with_two_commits(repo_path):
+    """Initialise un dépôt Git temporaire avec deux commits et retourne leurs SHAs."""
+    subprocess.run(['git', 'init'], cwd=repo_path, check=True, capture_output=True, text=True)
+    subprocess.run(['git', 'config', 'user.name', 'AIContextCraft Tests'], cwd=repo_path, check=True, capture_output=True, text=True)
+    subprocess.run(['git', 'config', 'user.email', 'tests@aicc.local'], cwd=repo_path, check=True, capture_output=True, text=True)
+
+    tracked_file = repo_path / 'sample.py'
+    tracked_file.write_text("print('v1')\n", encoding='utf-8')
+    subprocess.run(['git', 'add', 'sample.py'], cwd=repo_path, check=True, capture_output=True, text=True)
+    subprocess.run(['git', 'commit', '-m', 'first'], cwd=repo_path, check=True, capture_output=True, text=True)
+    first_sha = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=repo_path, check=True, capture_output=True, text=True).stdout.strip()
+
+    tracked_file.write_text("print('v2')\nprint('new line')\n", encoding='utf-8')
+    subprocess.run(['git', 'add', 'sample.py'], cwd=repo_path, check=True, capture_output=True, text=True)
+    subprocess.run(['git', 'commit', '-m', 'second'], cwd=repo_path, check=True, capture_output=True, text=True)
+    second_sha = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=repo_path, check=True, capture_output=True, text=True).stdout.strip()
+
+    return first_sha, second_sha
+
+
+def test_git_diff_mode_generates_markdown_output(tmp_path):
+    """Valide que --git-diff génère un fichier Markdown contenant un bloc diff."""
+    repo_path = tmp_path / 'repo'
+    repo_path.mkdir()
+    sha_a, sha_b = init_git_repo_with_two_commits(repo_path)
+    output_file = tmp_path / 'git_diff_output.txt'
+
+    args = [
+        '--project', str(repo_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--git-diff', sha_a, sha_b
+    ]
+
+    result = run_aicc(args, cwd=repo_path)
+
+    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    expected_output = output_file.with_suffix('.md')
+    assert expected_output.exists(), "Le fichier de sortie Markdown n'a pas été créé."
+    content = expected_output.read_text(encoding='utf-8')
+    assert f"# Diff Git: {sha_a} -> {sha_b}" in content
+    assert "```diff" in content
+    assert "-print('v1')" in content
+    assert "+print('v2')" in content
+
+
+def test_git_diff_mode_with_invalid_ref_fails(tmp_path):
+    """Valide qu'une référence Git invalide provoque une erreur claire."""
+    repo_path = tmp_path / 'repo_invalid_ref'
+    repo_path.mkdir()
+    sha_a, _ = init_git_repo_with_two_commits(repo_path)
+    output_file = tmp_path / 'git_diff_invalid_output.txt'
+
+    args = [
+        '--project', str(repo_path),
+        '--output', str(output_file),
+        '--no-timestamp',
+        '--git-diff', sha_a, 'not-a-valid-ref'
+    ]
+
+    result = run_aicc(args, cwd=repo_path)
+
+    assert result.returncode != 0
+    assert "not-a-valid-ref" in result.stderr

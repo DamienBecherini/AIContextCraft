@@ -71,6 +71,7 @@ python aicc.py -p /path/to/your/project -o /path/to/output/context.txt
 | `--strip-comments`   | Remove comments and docstrings from code files.                           |
 | `--headers-only`     | Extract only function/class signatures and docstrings from Python files.  |
 | `--use-gitignore`    | Automatically use the project's `.gitignore` file for exclusions.         |
+| `--git-diff`         | Generate a Markdown report with the global Git diff between two revisions. |
 | `--no-timestamp`     | Do not append a timestamp to the output filename.                         |
 | `--dry-run`          | Run the script without writing any files to see what would be included.   |
 | `-v`, `--verbose`    | Print detailed processing information to the console.                     |
@@ -84,6 +85,12 @@ python aicc.py --project ./my-python-app --strip-comments --use-gitignore -v
 ```
 
 This will create a file in the `build/` directory containing the project tree and the cleaned content of all relevant files.
+
+Generate a dedicated Markdown diff report (without running the standard concatenation flow):
+
+```bash
+python aicc.py --project ./my-python-app --git-diff HEAD~1 HEAD --output ./build/git_diff_report.txt --no-timestamp
+```
 
 ## ⚙️ Configuration (`config.yaml`)
 

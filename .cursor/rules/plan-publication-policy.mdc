@@ -5,6 +5,8 @@ alwaysApply: true
 
 # Plan Publication Policy
 
+Scope note: this rule applies only when the active workspace is `AIContextCraft` (`/opt/AIContextCraft`). Do not apply `wp-manager`-specific test procedures here.
+
 Before generating any implementation plan, ask the user this explicit question:
 
 "Do you want me to add a step that copies the generated plan into `docs/plans/<branch-name>/` and renames it to `YYYY_MM_DD_HH:MM_<plan-title>.plan.md` (example: `2026_05_16_11:30_smtp-flux-separes.plan.md`)?"
@@ -59,19 +61,17 @@ Recommended format:
 
 ## Unit Test Procedure (mandatory after implementation)
 
-When a task includes Python code changes, run unit tests using the project-integrated procedure below:
+When a task includes Python code changes in `AIContextCraft`, run tests with a local pytest workflow (no Docker build step):
 
-1. Rebuild the Docker image first so `/tests` changes are included in the `cli` container:
-   - `./wpm.sh build`
-2. Run tests via the official wrapper script (not raw local `pytest`):
-   - Full suite: `./run-tests-unitaires.sh`
-   - Targeted run: `./run-tests-unitaires.sh tests/test_file.py`
-   - Rerun failed: `./run-tests-unitaires.sh --rerun-failed`
-3. Read the generated log under `logs/unit_tests_run_*.log` and report:
-   - number of collected tests
-   - pass/fail result
-   - warnings (if any)
+1. Run tests with `pytest` from the project root:
+ - Full suite: `python -m pytest tests`
+ - Targeted run: `python -m pytest tests/test_file.py`
+ - Rerun failed: `python -m pytest --lf`
+2. Report test evidence in chat:
+ - number of collected tests
+ - pass/fail result
+ - warnings (if any)
 
 Notes:
-- This procedure requires Docker daemon access (`/var/run/docker.sock`).
-- If `logs/` permissions block writes, fix ownership before running tests (for example `sudo chown -R $USER:$USER logs`).
+- Do not run `./wpm.sh build` for `AIContextCraft`.
+- If local environment issues block execution, report the blocker and provide the exact command to rerun.
