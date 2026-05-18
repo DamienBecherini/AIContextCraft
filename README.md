@@ -183,6 +183,101 @@ Generate XML output optimized for LLM ingestion and increase clipboard limit for
 python main.py --project ./my-python-app --format xml --clipboard-limit 25
 ```
 
+### Sample output (XML)
+
+By default, the tool writes a single file under `build/` (timestamped unless `--no-timestamp` is set). The default `--format xml` wraps the project in structured tags for LLM ingestion: `<repository>`, `<directory_structure>`, then `<files>` with one block per concatenated file.
+
+In the tree below, **●** means the file body is included in `<files>`; **○** means it appears in the tree only (excluded from content via `project_only_filters`, for example `.svg` assets here). Folder and extension totals show concatenated **●** sizes first, then `(Real total: …)` for every file visible in the tree.
+
+Representative excerpt (header + directory tree; file bodies follow in `<files>`):
+
+```xml
+This file is a concatenation of several source files from a project.
+Generation date: 2026-05-18 23:11:27
+Content statistics: Size: 137.58 KB (140,880 bytes), Tokens (est.): 36036
+
+<repository>
+<directory_structure>
+Legend: ● file concatenated in the content below; ○ file shown for reference only (excluded by project_only_filters). Folder and Extensions section sizes show concatenated ● totals first, then (Real total: …) for all files visible in the tree.
+Project tree: /opt/AIContextCraft
+├── .cursor/
+│   └── rules/
+├── ● .gitignore — 7.95 KB
+├── ● LICENSE — 6.45 KB
+├── ● README.md — 14.79 KB
+├── ● ROADMAP.md — 3.47 KB
+├── ● aicc.py — 120 B
+├── craft/ — 33.63 KB
+│   ├── ● __init__.py — 51 B
+│   ├── ● context_builder.py — 4.45 KB
+│   ├── ● file_processor.py — 4.54 KB
+│   ├── ● filter_manager.py — 2.54 KB
+│   ├── ● formatter.py — 3.38 KB
+│   ├── ● git_manager.py — 1.02 KB
+│   ├── ● ignore_manager.py — 6.28 KB
+│   ├── ● tree_generator.py — 7.77 KB
+│   ├── ● types.py — 99 B
+│   └── ● utils.py — 3.50 KB
+├── docs/ — 26.46 KB (Real total: 367.94 KB)
+│   └── architecture/ — 26.46 KB (Real total: 367.94 KB)
+│       ├── ● README.md — 2.26 KB
+│       ├── assets/ — 0 B (Real total: 202.29 KB)
+│       │   ├── ○ container-view.svg
+│       │   ├── ○ git-diff-flow.svg
+│       │   ├── ○ processing-flow-view.svg
+│       │   ├── ○ run-standard-flow.svg
+│       │   └── ○ system-context.svg
+│       ├── sequences/ — 1.88 KB
+│       │   ├── ● git-diff-flow.md — 795 B
+│       │   └── ● run-standard-flow.md — 1.10 KB
+│       └── structurizr/ — 22.32 KB (Real total: 161.51 KB)
+│           ├── out/ — 17.92 KB (Real total: 157.11 KB)
+│           │   ├── ● structurizr-containerView-key.puml — 1.83 KB
+│           │   ├── ● structurizr-containerView.puml — 5.58 KB
+│           │   ├── ○ structurizr-containerView.svg
+│           │   ├── ● structurizr-processingFlowView-key.puml — 1.83 KB
+│           │   ├── ● structurizr-processingFlowView.puml — 4.59 KB
+│           │   ├── ○ structurizr-processingFlowView.svg
+│           │   ├── ● structurizr-systemContext-key.puml — 1.26 KB
+│           │   ├── ● structurizr-systemContext.puml — 2.84 KB
+│           │   └── ○ structurizr-systemContext.svg
+│           └── ● workspace.dsl — 4.40 KB
+├── logs/
+├── ● main.py — 21.18 KB
+├── ● requirements.txt — 65 B
+└── scripts/ — 7.61 KB
+    └── architecture/ — 7.61 KB
+        ├── ● generate-all.sh — 877 B
+        ├── ● render-diagram-assets.sh — 3.94 KB
+        ├── ● render-structurizr.sh — 1.53 KB
+        └── ● validate-mermaid.sh — 1.28 KB
+
+Extensions (concatenated files):
+  (no extension)       14.40 KB
+  .dsl                 4.40 KB
+  .md                  22.40 KB
+  .puml                17.92 KB
+  .py                  54.93 KB
+  .sh                  7.61 KB
+  .txt                 65 B
+</directory_structure>
+<files>
+<file path=".gitignore">
+# ================================================================= #
+# AI Context Craft - .gitignore                                     #
+# ================================================================= #
+<!-- … remaining ● files … -->
+</file>
+</files>
+</repository>
+```
+
+To reproduce a similar export on this repository:
+
+```bash
+python main.py -p . -c config-concat-code.yaml --format xml
+```
+
 ## 🧭 Architecture Documentation
 
 AIContextCraft architecture is documented in diagrams-as-code form (C4 + sequence diagrams):
