@@ -1,54 +1,56 @@
 #!/usr/bin/env bash
 
 # ================================================================= #
-# Script de Génération des Projets de Test pour AI Context Craft    #
+# AI Context Craft test project generator script                    #
 #                                                                   #
-# Utilisation :                                                     #
-#   1. ./setup_tests.sh              : Crée/réinitialise les projets de test.
-#   2. ./setup_tests.sh --golden-files : Crée les projets ET génère les
-#                                      fichiers "expected_output.txt".
+# Usage:                                                            #
+#   1. ./setup_tests.sh              : Create/reset test projects.    #
+#   2. ./setup_tests.sh --golden-files : Create projects AND generate #
+#                                      "expected_output.txt" files.   #
 # ================================================================= #
 
-# Arrête le script immédiatement si une commande échoue
+# Exit immediately if a command fails
 set -e
 
-# --- Configuration et Couleurs ---
-# Se positionne dans le répertoire du script pour que les chemins relatifs fonctionnent
+# --- Configuration and colors ---
+# Run from the script directory so relative paths work
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_ROOT="$SCRIPT_DIR/.."
 TEST_PROJECTS_ROOT="$SCRIPT_DIR/test_projects"
 AICC_SCRIPT="$PROJECT_ROOT/main.py"
 
-# Couleurs pour un affichage plus clair
+# Colors for clearer output
 COLOR_BLUE='\033[0;34m'
 COLOR_GREEN='\033[0;32m'
 COLOR_YELLOW='\033[1;33m'
 COLOR_NC='\033[0m' # No Color
 
-# --- Fonctions de création des projets ---
+# --- Test project creation functions ---
 
-# Scénario 1 : Un projet simple pour tester la concaténation de base
+# Scenario 1: simple project for basic concatenation
 create_basic_project() {
     local project_dir="$TEST_PROJECTS_ROOT/basic_project"
-    echo -e "${COLOR_BLUE}--> Création du projet de test : 'basic_project'${COLOR_NC}"
+    echo -e "${COLOR_BLUE}--> Creating test project: 'basic_project'${COLOR_NC}"
     
-    # Nettoyer l'ancien projet s'il existe
+    # Remove previous project if it exists
     rm -rf "$project_dir"
     mkdir -p "$project_dir/app"
 
-    # Créer les fichiers avec leur contenu via "here documents"
+    # Create files via here documents
     cat << 'EOF' > "$project_dir/config.yaml"
-# Configuration simple pour le test
+# Simple configuration for this test
 include_patterns:
   - '**/*'
 common_filters:
   - ".git/"
   - "build/"
+  - "expected_output.txt"
+  - "*.log"
 tree_only_filters: []
 EOF
 
     cat << 'EOF' > "$project_dir/.gitignore"
-# Fichier à ignorer
+# File to ignore
 ignored_file.txt
 __pycache__/
 EOF
@@ -58,7 +60,7 @@ EOF
 import utils
 
 def main():
-    """Ceci est la fonction principale."""
+    """This is the main function."""
     print("Hello, World!")
     utils.helper()
 EOF
@@ -66,50 +68,50 @@ EOF
     cat << 'EOF' > "$project_dir/utils.py"
 # utils.py
 def helper():
-    # Une fonction utilitaire
+    # A utility function
     print("Helper function.")
 EOF
-    echo "    Projet 'basic_project' créé."
+    echo "    Test project 'basic_project' created."
 }
 
-# Scénario 2 : Un projet pour tester la suppression des commentaires (--strip-comments)
+# Scenario 2: project for --strip-comments
 create_strip_comments_project() {
     local project_dir="$TEST_PROJECTS_ROOT/strip_comments_project"
-    echo -e "${COLOR_BLUE}--> Création du projet de test : 'strip_comments_project'${COLOR_NC}"
+    echo -e "${COLOR_BLUE}--> Creating test project: 'strip_comments_project'${COLOR_NC}"
 
     rm -rf "$project_dir"
     mkdir -p "$project_dir"
 
-    # Fichier Python riche en commentaires et docstrings
+    # Python file rich in comments and docstrings
     cat << 'EOF' > "$project_dir/code_with_comments.py"
-# Ce script est un exemple pour le test.
-# Il contient divers types de commentaires.
+# This script is an example for the test.
+# It contains various comment styles.
 
 class MyClass:
     """
-    Ceci est une docstring de classe.
-    Elle devrait être supprimée.
+    This is a class docstring.
+    It should be removed.
     """
     def __init__(self, name):
-        self.name = name # Commentaire en ligne
+        self.name = name # Inline comment
 
     def greet(self):
-        """Docstring de méthode."""
-        # Affiche un message
+        """Method docstring."""
+        # Print a message
         print(f"Hello, {self.name}")
 
-# Fonction de premier niveau
+# Top-level function
 def top_level_function():
-    """Une autre docstring à supprimer."""
-    return 1 + 1 # Calcul simple
+    """Another docstring to remove."""
+    return 1 + 1 # Simple calculation
 EOF
-    echo "    Projet 'strip_comments_project' créé."
+    echo "    Test project 'strip_comments_project' created."
 }
 
-# Scénario 3 : .gitignore hiérarchiques et règles de sécurité (Phase 1)
+# Scenario 3: hierarchical .gitignore and security rules (Phase 1)
 create_nested_ignore_project() {
     local project_dir="$TEST_PROJECTS_ROOT/nested_ignore_project"
-    echo -e "${COLOR_BLUE}--> Création du projet de test : 'nested_ignore_project'${COLOR_NC}"
+    echo -e "${COLOR_BLUE}--> Creating test project: 'nested_ignore_project'${COLOR_NC}"
 
     rm -rf "$project_dir"
     mkdir -p "$project_dir/logs" "$project_dir/frontend/node_modules/pkg" "$project_dir/frontend/src"
@@ -130,81 +132,83 @@ EOF
     echo 'export const ok = true;' > "$project_dir/frontend/src/ok.js"
     echo 'FAKE_SECRET=do-not-leak' > "$project_dir/.env.local"
 
-    echo "    Projet 'nested_ignore_project' créé."
+    echo "    Test project 'nested_ignore_project' created."
 }
 
-# --- Fonction pour générer les fichiers "Golden" (attendus) ---
+# --- Golden file generation (expected outputs) ---
 
 generate_golden_files() {
-    echo -e "\n${COLOR_YELLOW}--- Génération des fichiers 'Golden' (expected_output.txt) ---${COLOR_NC}"
+    echo -e "\n${COLOR_YELLOW}--- Generating 'Golden' files (expected_output.txt) ---${COLOR_NC}"
 
-    # 1. Pour 'basic_project'
-    echo "  -> Génération pour 'basic_project'..."
+    # 1. For 'basic_project'
+    echo "  -> Generating for 'basic_project'..."
     local basic_project_dir="$TEST_PROJECTS_ROOT/basic_project"
     local temp_output_basic="/tmp/aicc_basic_output.txt"
-    python3 "$AICC_SCRIPT" \
+    PYTHON="${AICC_PYTHON:-python3}"
+    "$PYTHON" "$AICC_SCRIPT" \
         --project "$basic_project_dir" \
         --output "$temp_output_basic" \
         --no-timestamp \
         --config "$basic_project_dir/config.yaml"
 
-    # Supprime l'en-tête dynamique pour créer un fichier de référence stable
-    # Le chemin dans l'arbre sera différent sur chaque machine, donc on le remplace.
-    # On saute les 4 premières lignes et on ajoute un en-tête simple et stable.
+    # Strip dynamic header for a stable reference file
+    # Tree path differs per machine, so normalize it.
+    # Skip the first 4 lines and add a simple stable header.
     {
-        echo "Ce fichier est une concaténation de plusieurs fichiers sources d'un projet."
+        echo "This file is a concatenation of several source files from a project."
         echo ""
-        tail -n +5 "$temp_output_basic" | sed "1s|Arbre du projet :.*|Arbre du projet : [CHEMIN_NORMALISÉ]|"
+        tail -n +5 "$temp_output_basic" | sed "1s|Project tree:.*|Project tree: [NORMALIZED_PATH]|"
     } > "$basic_project_dir/expected_output.txt"
     rm "$temp_output_basic"
-    echo -e "     ${COLOR_GREEN}Fichier 'expected_output.txt' généré.${COLOR_NC}"
+    echo -e "     ${COLOR_GREEN}File 'expected_output.txt' generated.${COLOR_NC}"
 
 
-    # 2. Pour 'strip_comments_project'
-    echo "  -> Génération pour 'strip_comments_project' (avec --strip-comments)..."
+    # 2. For 'strip_comments_project'
+    echo "  -> Generating for 'strip_comments_project' (with --strip-comments)..."
     local strip_project_dir="$TEST_PROJECTS_ROOT/strip_comments_project"
     local temp_output_strip="/tmp/aicc_strip_output.txt"
-    python3 "$AICC_SCRIPT" \
+    PYTHON="${AICC_PYTHON:-python3}"
+    "$PYTHON" "$AICC_SCRIPT" \
         --project "$strip_project_dir" \
         --output "$temp_output_strip" \
         --no-timestamp \
         --strip-comments
     
     {
-        echo "Ce fichier est une concaténation de plusieurs fichiers sources d'un projet."
+        echo "This file is a concatenation of several source files from a project."
         echo ""
-        tail -n +5 "$temp_output_strip" | sed "1s|Arbre du projet :.*|Arbre du projet : [CHEMIN_NORMALISÉ]|"
+        tail -n +5 "$temp_output_strip" | sed "1s|Project tree:.*|Project tree: [NORMALIZED_PATH]|"
     } > "$strip_project_dir/expected_output.txt"
     rm "$temp_output_strip"
-    echo -e "     ${COLOR_GREEN}Fichier 'expected_output.txt' généré.${COLOR_NC}"
+    echo -e "     ${COLOR_GREEN}File 'expected_output.txt' generated.${COLOR_NC}"
 
-    echo -e "${COLOR_YELLOW}--- Génération terminée ---${COLOR_NC}"
+    echo -e "${COLOR_YELLOW}--- Generation complete ---${COLOR_NC}"
 }
 
 
-# --- Point d'entrée du script ---
+# --- Script entry point ---
 main() {
-    # Créer le répertoire principal des projets de test s'il n'existe pas
+    # Create the main test projects directory if missing
     mkdir -p "$TEST_PROJECTS_ROOT"
 
-    echo -e "${COLOR_GREEN}Initialisation de l'environnement de test...${COLOR_NC}"
+    echo -e "${COLOR_GREEN}Initializing test environment...${COLOR_NC}"
     
-    # Appeler les fonctions pour créer chaque projet
+    # Create each test project
     create_basic_project
     create_strip_comments_project
     create_nested_ignore_project
-    # Ajoutez ici les appels pour vos futurs projets de test
+    # Add calls here for future test projects
     # create_headers_only_project
 
-    # Vérifier si l'argument --golden-files est passé
+    # Check for --golden-files argument
     if [[ "$1" == "--golden-files" ]]; then
         generate_golden_files
     else
-        echo -e "\n${COLOR_YELLOW}Pour générer/mettre à jour les fichiers 'expected_output.txt', lancez : ./setup_tests.sh --golden-files${COLOR_NC}"
+        echo -e "\n${COLOR_YELLOW}To generate/update 'expected_output.txt' files, run: ./setup_tests.sh --golden-files${COLOR_NC}"
     fi
 
-    echo -e "\n${COLOR_GREEN}✅ Environnement de test prêt !${COLOR_NC}"
+    echo -e "\n${COLOR_GREEN}✅ Test environment ready!${COLOR_NC}"
 }
 
-# Exécuter la fonction principale
+# Run main
 main "$@"

@@ -1,4 +1,4 @@
 # utils.py
 def helper():
-    # Une fonction utilitaire
+    # A utility function
     print("Helper function.")

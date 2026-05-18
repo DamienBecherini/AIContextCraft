@@ -5,7 +5,7 @@ import pathspec
 
 
 def normalize_glob_patterns(patterns: list[str] | None) -> list[str]:
-    """Normalise les patterns pour un matching cross-platform cohérent."""
+    """Normalize patterns for consistent cross-platform matching."""
     if not patterns:
         return []
     normalized: list[str] = []

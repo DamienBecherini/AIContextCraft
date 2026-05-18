@@ -39,11 +39,11 @@ def _build_context_builder(project_path, encoding: str = "utf-8") -> ContextBuil
 
 def test_fallback_encoding_iso_8859_1(tmp_path):
     file_path = tmp_path / "latin1.txt"
-    file_path.write_bytes("Voici un été français".encode("iso-8859-1"))
+    file_path.write_bytes("Here is a French summer".encode("iso-8859-1"))
 
     content = read_file_with_fallback(file_path, "utf-8")
 
-    assert "été français" in content
+    assert "French summer" in content
 
 
 def test_fallback_replace_when_detection_fails(tmp_path, monkeypatch):
@@ -67,7 +67,7 @@ def test_context_builder_process_files_preserves_accents(tmp_path):
     project.mkdir()
     source_file = project / "notes.txt"
     source_file.write_bytes(
-        "Voici un été français avec des accents: à, é, è, ç, ù.".encode("iso-8859-1")
+        "Here is summer text with accents: à, é, è, ç, ù.".encode("iso-8859-1")
     )
 
     builder = _build_context_builder(project, encoding="utf-8")
@@ -75,4 +75,4 @@ def test_context_builder_process_files_preserves_accents(tmp_path):
 
     assert len(files_data) == 1
     assert files_data[0].path == "notes.txt"
-    assert "été français" in files_data[0].content
+    assert "summer text with accents" in files_data[0].content

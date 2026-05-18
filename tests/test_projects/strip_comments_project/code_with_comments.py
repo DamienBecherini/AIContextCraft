@@ -1,20 +1,20 @@
-# Ce script est un exemple pour le test.
-# Il contient divers types de commentaires.
+# This script is an example for the test.
+# It contains various comment styles.
 
 class MyClass:
     """
-    Ceci est une docstring de classe.
-    Elle devrait être supprimée.
+    This is a class docstring.
+    It should be removed.
     """
     def __init__(self, name):
-        self.name = name # Commentaire en ligne
+        self.name = name # Inline comment
 
     def greet(self):
-        """Docstring de méthode."""
-        # Affiche un message
+        """Method docstring."""
+        # Print a message
         print(f"Hello, {self.name}")
 
-# Fonction de premier niveau
+# Top-level function
 def top_level_function():
-    """Une autre docstring à supprimer."""
-    return 1 + 1 # Calcul simple
+    """Another docstring to remove."""
+    return 1 + 1 # Simple calculation

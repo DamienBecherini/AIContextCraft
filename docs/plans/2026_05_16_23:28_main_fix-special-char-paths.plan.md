@@ -27,7 +27,7 @@ Enable reliable use of folder/file names containing Unicode characters (emoji, a
 
 ## Current state
 - Configuration loading relies on `yaml.safe_load` in [`/opt/AIContextCraft/aicc.py`](/opt/AIContextCraft/aicc.py).
-- A value like `"🚀 Projets\🏰 Proxmox Homelab"` in a double-quoted YAML scalar fails before any application logic (`unknown escape character`).
+- A value like `"🚀 Projects\🏰 Proxmox Homelab"` in a double-quoted YAML scalar fails before any application logic (`unknown escape character`).
 - The matching engine compares paths normalized to `/` during scanning, but user patterns are not normalized symmetrically.
 
 ## Implementation plan
@@ -87,7 +87,7 @@ Implementation completed; all plan todos are done.
 - `README.md`
 - `tests/test_projects/special_chars_project/config_slash.yaml`
 - `tests/test_projects/special_chars_project/config_backslash.yaml`
-- `tests/test_projects/special_chars_project/🚀 Projets/🏰 Proxmox Homelab/context.txt`
+- `tests/test_projects/special_chars_project/🚀 Projects/🏰 Proxmox Homelab/context.txt`
 - `tests/test_projects/special_chars_project/other/ignored.txt`
 - `docs/plans/2026_05_16_23:28_main_fix-special-char-paths.plan.md`
 

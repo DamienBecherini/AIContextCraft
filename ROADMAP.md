@@ -1,65 +1,65 @@
-# 🗺️ AI Context Craft : Roadmap
+# 🗺️ AI Context Craft Roadmap
 
-## 1. Vision et Objectif
-**Vision :** Un outil CLI personnel, robuste et pragmatique pour préparer des bases de code avant de les envoyer à un LLM.
-**Objectif :** Obtenir un contexte IA ultra-pertinent en combinant un filtrage drastique et une extraction intelligente (Périmètre + Zoom), sans s'encombrer de fonctionnalités gadgets.
-
----
-
-## 2. État Actuel (Version Stable - Phase 1)
-* **Filtrage hiérarchique :** Respect de `.gitignore`, `.dockerignore`, etc.
-* **Sécurité :** Exclusion forcée des secrets (`.env`, `*.pem`) et fallback d'encodage.
-* **Plug & Play :** Zero-config, presse-papiers automatique (-cb), formats XML/Markdown.
-* **Git-Diff :** Rapport Markdown des différences entre deux branches.
+## 1. Vision and goal
+**Vision:** A personal, robust, pragmatic CLI tool to prepare codebases before sending them to an LLM.
+**Goal:** Deliver highly relevant AI context by combining aggressive filtering and smart extraction (scope + focus), without gadget features.
 
 ---
 
-## 3. 🚀 Prochaine Étape : Phase 2 - L'Extraction Universelle (Tree-sitter)
-Actuellement, l'optimisation (`--strip-comments` et `--headers-only`) ne gère que Python (via l'AST natif). Le but est de l'étendre aux langages du quotidien (JS, TS, Rust, Go, C++, etc.) de manière robuste.
-
-1. **Intégration de `tree-sitter` :**
-   * Remplacer l'AST Python par le parseur universel `tree-sitter`.
-   * Permettre la suppression fiable des commentaires pour les langages majeurs.
-2. **Le "Repo Map" Universel :**
-   * Rendre l'option `--headers-only` compatible multi-langage pour générer une "carte" compacte du projet (uniquement les signatures de fonctions/classes).
+## 2. Current state (stable — Phase 1)
+* **Hierarchical filtering:** Respects `.gitignore`, `.dockerignore`, etc.
+* **Security:** Forced exclusion of secrets (`.env`, `*.pem`) and encoding fallback.
+* **Plug & play:** Zero-config, automatic clipboard (`-cb`), XML/Markdown formats.
+* **Git diff:** Markdown report of differences between two branches.
 
 ---
 
-## 4. 🧠 Phase 3 - Le Filtrage "Focus" (Le modèle Cursor)
-Combiner le "Périmètre" (YAML Config) et le "Zoom" (Focus) pour envoyer à l'IA la carte globale du projet, mais avec le code complet uniquement sur les fichiers pertinents.
+## 3. 🚀 Next step: Phase 2 — Universal extraction (Tree-sitter)
+Today, optimization (`--strip-comments` and `--headers-only`) only handles Python (native AST). The goal is to extend it to everyday languages (JS, TS, Rust, Go, C++, etc.) robustly.
 
-1. **Le Focus Git (`--focus-git`) :**
-   * À l'intérieur du périmètre autorisé, inclure le code complet *uniquement* pour les fichiers modifiés localement (ou staged).
-   * Rétrograder automatiquement le reste du projet en mode `--headers-only` (Repo Map).
-2. **Le Focus Sémantique / Grep (`--focus "keyword"`) :**
-   * Extraire le code complet des fichiers qui matchent un mot-clé précis, et garder le reste en Repo Map.
-
----
-
-## 5. 💡 Le Labo (Boîte à Idées & Explorations)
-*Une liste d'idées et de concepts à explorer pour l'avenir.*
-
-* **L'Agent d'Investigation (Focus IA) :** Connecter l'outil à une API IA low-cost (ou locale via Ollama) pour qu'elle lise la "carte du projet" (Repo Map) et trouve d'elle-même les fichiers pertinents pour résoudre un ticket, automatisant ainsi le filtrage de manière "pseudo-intelligente".
-* **Le Chasseur de Dépendances (Imports Crawler) :** Si un fichier est ciblé par le Focus, analyser ses `import` pour inclure automatiquement le code des fichiers dont il dépend pour fonctionner.
-* **Support Multimodal (Vision) :** Détecter les images (PNG, SVG, JPG) et les encoder en Base64 dans le XML pour que les modèles multimodaux (Claude 3.5, GPT-4o) puissent "voir" les maquettes UI ou les diagrammes d'architecture.
-* **Optimisation "Prompt Caching" :** Structurer le document XML pour placer le contexte statique en haut et le contexte dynamique (fichiers modifiés) en bas, afin de maximiser les hits de cache sur les API Anthropic/OpenAI.
-* **Découverte Automatique des Tests :** Lors d'un Focus sur un fichier source, détecter et inclure automatiquement le fichier de tests unitaires associé (`test_*.py`, `*.spec.js`).
-* **Secret Scanning (Redaction) :** Scanner activement le contenu des fichiers pour détecter et masquer (ex: `[REDACTED]`) les clés API AWS/Stripe oubliées dans le code avant la copie.
-* **Templates de Prompts :** Permettre d'englober le contexte généré directement à l'intérieur d'une consigne pré-définie (ex: `--template code-review`).
-* **Smart Minification :** Résumer intelligemment les lockfiles (`package-lock.json`) en une simple liste de dépendances pour économiser des milliers de tokens.
-* **Ingestion Distante :** Remplacer le chemin local par une URL GitHub pour analyser un dépôt à la volée.
+1. **`tree-sitter` integration:**
+   * Replace the Python AST with the universal `tree-sitter` parser.
+   * Enable reliable comment stripping for major languages.
+2. **Universal “Repo Map”:**
+   * Make `--headers-only` multi-language to produce a compact project map (function/class signatures only).
 
 ---
 
-## 6. ✅ Historique (Archives)
+## 4. 🧠 Phase 3 — “Focus” filtering (Cursor-style model)
+Combine “Scope” (YAML config) and “Zoom” (Focus) to send the global project map to the AI, with full code only on relevant files.
 
-### Phase 1 : Expérience Utilisateur (Terminée)
-* Barre de progression console via `rich`.
-* Gestion intelligente du presse-papiers (limite de taille, `-cb`, fallback SSH).
-* Formats de sortie LLM (XML par défaut, Markdown).
-* Logique "Plug & Play" (configuration auto-détectée, sortie `build/`).
+1. **Git focus (`--focus-git`):**
+   * Within the allowed scope, include full code only for locally modified (or staged) files.
+   * Automatically downgrade the rest of the project to `--headers-only` (Repo Map).
+2. **Semantic / grep focus (`--focus "keyword"`):**
+   * Extract full code from files matching a keyword; keep the rest as Repo Map.
 
-### Phase 0 : Refactoring et Fondation (Terminée)
-* Découpage du script monolithique en modules dédiés (`craft/`).
-* Mise en place de tests automatisés (+30) pour éviter les régressions.
-* Documentation d'architecture as-code (Modèle C4, séquences Mermaid).
+---
+
+## 5. 💡 Lab (ideas and explorations)
+*Ideas and concepts to explore for the future.*
+
+* **Investigation agent (AI focus):** Connect to a low-cost (or local Ollama) API so it reads the project map and finds relevant files for a ticket, pseudo-intelligent filtering.
+* **Dependency hunter (import crawler):** When a file is focused, follow imports to include dependent code automatically.
+* **Multimodal support (vision):** Detect images (PNG, SVG, JPG) and encode as Base64 in XML for multimodal models (Claude 3.5, GPT-4o).
+* **Prompt caching optimization:** Structure XML with static context on top and dynamic context (changed files) at the bottom for Anthropic/OpenAI cache hits.
+* **Automatic test discovery:** On focus of a source file, include the associated unit test file (`test_*.py`, `*.spec.js`).
+* **Secret scanning (redaction):** Scan file content and mask forgotten AWS/Stripe API keys (e.g. `[REDACTED]`) before copy.
+* **Prompt templates:** Wrap generated context in a predefined instruction (e.g. `--template code-review`).
+* **Smart minification:** Summarize lockfiles (`package-lock.json`) as a dependency list to save tokens.
+* **Remote ingestion:** Replace a local path with a GitHub URL to analyze a repo on the fly.
+
+---
+
+## 6. ✅ History (archive)
+
+### Phase 1: User experience ✅ (complete)
+* Console progress bar via `rich`.
+* Smart clipboard handling (size limit, `-cb`, SSH fallback).
+* LLM output formats (XML default, Markdown).
+* “Plug & play” logic (auto-detected config, `build/` output).
+
+### Phase 0: Refactoring and foundation ✅ (complete)
+* Split monolithic script into dedicated modules (`craft/`).
+* Automated tests (30+) to prevent regressions.
+* Architecture-as-code documentation (C4 model, Mermaid sequences).

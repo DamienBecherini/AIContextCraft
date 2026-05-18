@@ -1,24 +1,23 @@
-# Chemin par défaut pour le fichier de sortie.
+# Default path for the output file.
 output_path: "./build/concat-code.md"
 
-# --- SÉLECTION DES FICHIERS ---
+# --- FILE SELECTION ---
 
-# ÉTAPE 1: INCLUSION (prioritaire)
-# Seuls les fichiers et dossiers correspondant à ces patterns seront considérés.
-# Le pattern '**/*' signifie "tous les fichiers dans tous les sous-dossiers".
-# Exemples :
-#   - ['src/', 'tests/', 'README.md'] pour ne prendre que le contenu de 'src', 'tests' et le fichier README.
-#   - ['*.py', 'requirements.txt'] pour ne prendre que les fichiers Python et le fichier requirements.
+# STEP 1: INCLUSION (priority)
+# Only files and directories matching these patterns are considered.
+# The '**/*' pattern means "all files in all subdirectories".
+# Examples:
+#   - ['src/', 'tests/', 'README.md'] to take only src, tests, and README.
+#   - ['*.py', 'requirements.txt'] for Python files and requirements only.
 include_patterns:
   - '**/*'
   # - 'caprover_wp_manager/'
 
-# ÉTAPE 2: EXCLUSION
-# Parmi les fichiers inclus à l'étape 1, ceux qui correspondent à ces patterns
-# seront retirés.
+# STEP 2: EXCLUSION
+# Among files included in step 1, those matching these patterns are removed.
 
-# Filtres communs : s'appliquent PARTOUT (arbre et contenu des fichiers).
-# Idéal pour exclure les dépendances, les builds, les caches, etc.
+# Common filters: apply everywhere (tree and file content).
+# Ideal for excluding dependencies, builds, caches, etc.
 common_filters:
   - "*.pyc"
   - ".git/"
@@ -38,8 +37,8 @@ common_filters:
 
 
 
-# Filtres spécifiques au contenu : N'exclut que du contenu des fichiers,
-# mais le fichier/dossier APPARAÎTRA dans l'arbre.
+# Content-specific filters: exclude from file content only;
+# the file/directory still APPEARS in the tree.
 project_only_filters:
   - "*.jpg"
   - "*.webp"
@@ -56,12 +55,11 @@ project_only_filters:
 
 
 
-# Filtres spécifiques à l'arbre : N'exclut que de l'affichage de l'arbre.
-# Le contenu de ces fichiers SERA INCLUS dans la sortie finale.
+# Tree-specific filters: exclude from tree display only.
+# Content of these files WILL be included in the final output.
 tree_only_filters:
   - ""
   # - "*.md"
   # - "LICENSE"
   # - ".gitignore"
   # - "config.yaml"
-

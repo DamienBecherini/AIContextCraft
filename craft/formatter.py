@@ -38,13 +38,13 @@ def _build_text_output(
 
     all_files_content = []
     for file_data in files_data:
-        header = f"\n{'='*80}\n--- FICHIER: {file_data.path}\n{'='*80}\n\n"
+        header = f"\n{'='*80}\n--- FILE: {file_data.path}\n{'='*80}\n\n"
         all_files_content.append(header + file_data.content)
 
     body_content_str = "".join(all_files_content)
     return (
         project_tree + "\n\n" + extension_summary + "\n\n"
-        + "-" * 80 + "\nCONTENU DES FICHIERS\n" + "-" * 80 + "\n\n" + body_content_str
+        + "-" * 80 + "\nFILE CONTENTS\n" + "-" * 80 + "\n\n" + body_content_str
     )
 
 

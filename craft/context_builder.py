@@ -35,7 +35,7 @@ class ContextBuilder:
         self.console = console
 
     def _gather_files(self) -> list[Path]:
-        logging.info("Recherche optimisée des fichiers (avec élagage des dossiers exclus)...")
+        logging.info("Optimized file search (pruning excluded directories)...")
         final_file_list: list[Path] = []
         for root, dirs, files in os.walk(self.project_path, topdown=True):
             excluded_dirs = []
@@ -68,7 +68,7 @@ class ContextBuilder:
         files_data: list[ProcessedFile] = []
         file_iterator = track(
             final_file_list,
-            description="Traitement des fichiers...",
+            description="Processing files...",
             console=self.console,
             disable=not sys.stderr.isatty() or self.args.output_format == "json",
         )
@@ -84,14 +84,14 @@ class ContextBuilder:
 
                 files_data.append(ProcessedFile(path=relative_path_str, content=content))
             except IOError as e:
-                logging.error(f"  -> ERREUR: Impossible de lire {relative_path_str}. Erreur: {e}")
+                logging.error(f"  -> ERROR: Unable to read {relative_path_str}. Error: {e}")
         return files_data
 
     def build(self) -> tuple[str, str, list[ProcessedFile]]:
         final_file_list = self._gather_files()
         concatenated_paths = set(final_file_list)
 
-        logging.info("Génération de l'arbre du projet...")
+        logging.info("Generating project tree...")
         project_tree, tree_paths = generate_tree(
             self.project_path,
             self.filter_manager,
@@ -100,11 +100,11 @@ class ContextBuilder:
         )
         tree_file_paths = {p for p in tree_paths if p.is_file()}
         extension_summary = format_extension_summary(tree_file_paths, concatenated_paths)
-        logging.info(f"{len(final_file_list)} fichiers finaux trouvés après filtrage optimisé.")
-        logging.info("--- LISTE DES FICHIERS À TRAITER ---")
+        logging.info(f"{len(final_file_list)} final files after optimized filtering.")
+        logging.info("--- FILES TO PROCESS ---")
         for p in final_file_list:
-            logging.info(f"  [INCLUS] {str(p.relative_to(self.project_path)).replace('\\', '/')}")
-        logging.info("--- FIN DE LA LISTE ---")
+            logging.info(f"  [INCLUDED] {str(p.relative_to(self.project_path)).replace('\\', '/')}")
+        logging.info("--- END OF LIST ---")
 
         if self.args.tree_only:
             return project_tree, extension_summary, []

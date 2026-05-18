@@ -2,7 +2,7 @@ import subprocess
 
 
 def get_git_diff(repo_path, ref_a, ref_b):
-    """Récupère le diff Git brut entre deux révisions."""
+    """Return the raw Git diff between two revisions."""
     try:
         subprocess.run(
             ['git', 'rev-parse', '--is-inside-work-tree'],
@@ -12,9 +12,9 @@ def get_git_diff(repo_path, ref_a, ref_b):
             check=True
         )
     except FileNotFoundError as e:
-        raise RuntimeError("Git n'est pas installé ou n'est pas disponible dans le PATH.") from e
+        raise RuntimeError("Git is not installed or not available on PATH.") from e
     except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Le chemin '{repo_path}' n'est pas un dépôt Git valide.") from e
+        raise RuntimeError(f"Path '{repo_path}' is not a valid Git repository.") from e
 
     try:
         result = subprocess.run(
@@ -27,5 +27,5 @@ def get_git_diff(repo_path, ref_a, ref_b):
         return result.stdout
     except subprocess.CalledProcessError as e:
         stderr = (e.stderr or "").strip()
-        message = stderr if stderr else f"Impossible de calculer le diff entre '{ref_a}' et '{ref_b}'."
+        message = stderr if stderr else f"Unable to compute diff between '{ref_a}' and '{ref_b}'."
         raise RuntimeError(message) from e

@@ -106,7 +106,7 @@ class IgnoreManager:
                     patterns = _parse_ignore_lines(f.readlines())
             except (OSError, UnicodeError) as exc:
                 self._invalid_ignore_files.add(ignore_path)
-                logging.warning("Impossible de lire le fichier d'ignore '%s': %s", ignore_path, exc)
+                logging.warning("Unable to read ignore file '%s': %s", ignore_path, exc)
                 continue
 
             if not patterns:
@@ -114,9 +114,9 @@ class IgnoreManager:
 
             try:
                 spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
-            except Exception as exc:  # pragma: no cover - protection supplémentaire
+            except Exception as exc:  # pragma: no cover - extra safeguard
                 self._invalid_ignore_files.add(ignore_path)
-                logging.warning("Impossible de parser le fichier d'ignore '%s': %s", ignore_path, exc)
+                logging.warning("Unable to parse ignore file '%s': %s", ignore_path, exc)
                 continue
 
             specs.append(spec)

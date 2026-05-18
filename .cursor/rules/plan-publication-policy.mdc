@@ -53,7 +53,7 @@ If the user answers yes:
 - Insert a clear separator between the original plan and the appended report.
 - Use this structure:
   - `---`
-  - `## Compte rendu d'implementation`
+  - `## Implementation report`
   - report content
 
 If the user answers no:

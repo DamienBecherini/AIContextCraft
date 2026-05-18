@@ -1,5 +1,5 @@
 include_patterns:
-  - '🚀 Projets\🏰 Proxmox Homelab\**'
+  - '🚀 Projects\🏰 Proxmox Homelab\**'
 common_filters:
   - ".git/"
   - "build/"

@@ -6,16 +6,16 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Définir les chemins de base pour une meilleure portabilité
-# __file__ est le chemin de ce fichier de test
+# Base paths for portability
+# __file__ is the path to this test file
 TESTS_DIR = Path(__file__).parent
-# On remonte d'un niveau pour avoir la racine du projet
+# Parent directory is the project root
 PROJECT_ROOT = TESTS_DIR.parent
-# Chemin vers le script principal
+# Path to the main script
 AICC_SCRIPT = PROJECT_ROOT / 'main.py'
 
 def run_aicc(args, cwd=PROJECT_ROOT):
-    """Exécute le script main.py avec les arguments fournis via subprocess."""
+    """Run main.py with the given arguments via subprocess."""
     command = [sys.executable, str(AICC_SCRIPT)] + args
     env = os.environ.copy()
     env.setdefault("NO_COLOR", "1")
@@ -31,18 +31,18 @@ def run_aicc(args, cwd=PROJECT_ROOT):
     return result
 
 def find_content_start(lines):
-    """Trouve l'index de la ligne où le contenu réel commence."""
+    """Find the line index where the real content starts."""
     for i, line in enumerate(lines):
-        if line.strip().startswith("Arbre du projet :"):
+        if line.strip().startswith("Project tree:"):
             return i
-    # Si on ne trouve pas l'arbre, on retourne 0 pour comparer tout le fichier (et probablement échouer)
+    # If the tree line is missing, compare the whole file (likely to fail)
     return 0
 
 def compare_files_robust(generated_path, expected_path):
     """
-    Compare deux fichiers de manière robuste.
-    1. Ignore tout l'en-tête en trouvant la ligne "Arbre du projet".
-    2. Normalise le chemin de l'arbre pour être indépendant de la machine.
+    Compare two files robustly.
+    1. Skip the header by finding the "Project tree:" line.
+    2. Normalize the tree path so comparison is machine-independent.
     """
     with open(generated_path, 'r', encoding='utf-8') as f_gen, \
          open(expected_path, 'r', encoding='utf-8') as f_exp:
@@ -50,21 +50,21 @@ def compare_files_robust(generated_path, expected_path):
         lines_gen = f_gen.read().splitlines()
         lines_exp = f_exp.read().splitlines()
 
-        # Trouver le début du contenu dans chaque fichier
+        # Find content start in each file
         start_gen = find_content_start(lines_gen)
         start_exp = find_content_start(lines_exp)
         
-        # Tronquer les listes pour ne garder que le contenu pertinent
+        # Truncate lists to keep only relevant content
         content_lines_gen = lines_gen[start_gen:]
         content_lines_exp = lines_exp[start_exp:]
 
-        # Normaliser la première ligne (le chemin de l'arbre)
+        # Normalize the first line (tree path)
         if content_lines_gen:
-            content_lines_gen[0] = "Arbre du projet : [CHEMIN_NORMALISÉ]"
+            content_lines_gen[0] = "Project tree: [NORMALIZED_PATH]"
         if content_lines_exp:
-            content_lines_exp[0] = "Arbre du projet : [CHEMIN_NORMALISÉ]"
+            content_lines_exp[0] = "Project tree: [NORMALIZED_PATH]"
 
-        # Joindre les lignes pour la comparaison finale
+        # Join lines for final comparison
         final_content_gen = "\n".join(content_lines_gen)
         final_content_exp = "\n".join(content_lines_exp)
         
@@ -73,15 +73,15 @@ def compare_files_robust(generated_path, expected_path):
 
 def test_basic_concatenation(tmp_path):
     """
-    Teste la fonctionnalité de base : concaténation simple d'un projet.
-    `tmp_path` est une fixture pytest qui fournit un dossier temporaire unique.
+    Basic functionality: simple project concatenation.
+    `tmp_path` is a pytest fixture providing a unique temporary directory.
     """
-    # 1. Définir les chemins pour ce test
+    # 1. Paths for this test
     test_project_path = TESTS_DIR / 'test_projects' / 'basic_project'
     output_file = tmp_path / 'output.txt'
     expected_file = test_project_path / 'expected_output.txt'
     
-    # 2. Construire la commande
+    # 2. Build the command
     args = [
         '--project', str(test_project_path),
         '--output', str(output_file),
@@ -91,18 +91,18 @@ def test_basic_concatenation(tmp_path):
         '--no-clipboard',
     ]
     
-    # 3. Exécuter le script
+    # 3. Run the script
     result = run_aicc(args)
     
-    # 4. Vérifier les résultats
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
-    assert output_file.exists(), "Le fichier de sortie n'a pas été créé."
+    # 4. Check results
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
+    assert output_file.exists(), "Output file was not created."
     
-    # 5. Comparer le contenu du fichier généré avec le fichier attendu
+    # 5. Compare generated output with expected file
     compare_files_robust(output_file, expected_file)
 
 def test_tree_stats_project_indicators(tmp_path):
-    """Valide les symboles ●/○, les tailles et le résumé par extension."""
+    """Validate ●/○ symbols, sizes, and extension summary."""
     test_project_path = TESTS_DIR / 'test_projects' / 'tree_stats_project'
     output_file = tmp_path / 'tree_stats_output.txt'
 
@@ -117,22 +117,22 @@ def test_tree_stats_project_indicators(tmp_path):
 
     result = run_aicc(args)
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     content = output_file.read_text(encoding='utf-8')
 
     assert '● main.py' in content
     assert '○ README.md' in content
     assert 'README.md —' not in content
-    assert 'Extensions (fichiers concaténés)' in content
-    assert 'mixed/' in content and '(Total réel :' in content
-    assert '--- FICHIER: app/main.py' in content
-    assert '--- FICHIER: mixed/included.txt' in content
-    assert '--- FICHIER: README.md' not in content
-    assert '--- FICHIER: mixed/skipped.txt' not in content
+    assert 'Extensions (concatenated files)' in content
+    assert 'mixed/' in content and '(Real total:' in content
+    assert '--- FILE: app/main.py' in content
+    assert '--- FILE: mixed/included.txt' in content
+    assert '--- FILE: README.md' not in content
+    assert '--- FILE: mixed/skipped.txt' not in content
 
 
 def test_special_chars_pattern_with_slash(tmp_path):
-    """Valide l'inclusion avec des caractères Unicode et des slashs '/'."""
+    """Validate inclusion with Unicode characters and '/' separators."""
     test_project_path = TESTS_DIR / 'test_projects' / 'special_chars_project'
     output_file = tmp_path / 'special_chars_slash_output.txt'
 
@@ -147,13 +147,13 @@ def test_special_chars_pattern_with_slash(tmp_path):
 
     result = run_aicc(args)
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     content = output_file.read_text(encoding='utf-8')
-    assert "--- FICHIER: 🚀 Projets/🏰 Proxmox Homelab/context.txt" in content
-    assert "--- FICHIER: other/ignored.txt" not in content
+    assert "--- FILE: 🚀 Projects/🏰 Proxmox Homelab/context.txt" in content
+    assert "--- FILE: other/ignored.txt" not in content
 
 def test_special_chars_pattern_with_backslashes(tmp_path):
-    """Valide la normalisation des backslashes '\\' en '/' dans les patterns."""
+    """Validate backslash-to-slash normalization in patterns."""
     test_project_path = TESTS_DIR / 'test_projects' / 'special_chars_project'
     output_file = tmp_path / 'special_chars_backslash_output.txt'
 
@@ -168,18 +168,18 @@ def test_special_chars_pattern_with_backslashes(tmp_path):
 
     result = run_aicc(args)
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     content = output_file.read_text(encoding='utf-8')
-    assert "--- FICHIER: 🚀 Projets/🏰 Proxmox Homelab/context.txt" in content
-    assert "--- FICHIER: other/ignored.txt" not in content
+    assert "--- FILE: 🚀 Projects/🏰 Proxmox Homelab/context.txt" in content
+    assert "--- FILE: other/ignored.txt" not in content
 
 def test_invalid_yaml_backslash_error_has_guidance(tmp_path):
-    """Valide le message d'aide pour une config YAML invalide avec escapes."""
+    """Validate help message for invalid YAML config with bad escapes."""
     test_project_path = TESTS_DIR / 'test_projects' / 'basic_project'
     output_file = tmp_path / 'invalid_yaml_output.txt'
     invalid_config = tmp_path / 'invalid_config.yaml'
     invalid_config.write_text(
-        'include_patterns:\n  - "🚀 Projets\\🏰 Proxmox Homelab"\n',
+        'include_patterns:\n  - "🚀 Projects\\🏰 Proxmox Homelab"\n',
         encoding='utf-8'
     )
 
@@ -194,13 +194,13 @@ def test_invalid_yaml_backslash_error_has_guidance(tmp_path):
     result = run_aicc(args)
 
     assert result.returncode != 0
-    assert "Impossible de parser le fichier de configuration" in result.stderr
-    assert "Préférez '/' au lieu de '\\'" in result.stderr
-    assert "quotes simples" in result.stderr
+    assert "Unable to parse configuration file" in result.stderr
+    assert "Prefer '/' instead of" in result.stderr and "in patterns" in result.stderr
+    assert "single quotes" in result.stderr
 
 
 def init_git_repo_with_two_commits(repo_path):
-    """Initialise un dépôt Git temporaire avec deux commits et retourne leurs SHAs."""
+    """Create a temporary Git repo with two commits and return their SHAs."""
     subprocess.run(['git', 'init'], cwd=repo_path, check=True, capture_output=True, text=True)
     subprocess.run(['git', 'config', 'user.name', 'AIContextCraft Tests'], cwd=repo_path, check=True, capture_output=True, text=True)
     subprocess.run(['git', 'config', 'user.email', 'tests@aicc.local'], cwd=repo_path, check=True, capture_output=True, text=True)
@@ -220,7 +220,7 @@ def init_git_repo_with_two_commits(repo_path):
 
 
 def test_git_diff_mode_generates_markdown_output(tmp_path):
-    """Valide que --git-diff génère un fichier Markdown contenant un bloc diff."""
+    """Validate --git-diff generates a Markdown file with a diff block."""
     repo_path = tmp_path / 'repo'
     repo_path.mkdir()
     sha_a, sha_b = init_git_repo_with_two_commits(repo_path)
@@ -236,9 +236,9 @@ def test_git_diff_mode_generates_markdown_output(tmp_path):
 
     result = run_aicc(args, cwd=repo_path)
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     expected_output = output_file.with_suffix('.md')
-    assert expected_output.exists(), "Le fichier de sortie Markdown n'a pas été créé."
+    assert expected_output.exists(), "Markdown output file was not created."
     content = expected_output.read_text(encoding='utf-8')
     assert f"# Diff Git: {sha_a} -> {sha_b}" in content
     assert "```diff" in content
@@ -247,7 +247,7 @@ def test_git_diff_mode_generates_markdown_output(tmp_path):
 
 
 def test_nested_gitignore_and_security_patterns(tmp_path):
-    """Valide le Bouclier : .gitignore hiérarchiques et règles de sécurité."""
+    """Validate Shield: hierarchical .gitignore and security rules."""
     test_project_path = TESTS_DIR / 'test_projects' / 'nested_ignore_project'
     output_file = tmp_path / 'nested_ignore_output.txt'
 
@@ -261,13 +261,13 @@ def test_nested_gitignore_and_security_patterns(tmp_path):
     ]
 
     result = run_aicc(args)
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     content = output_file.read_text(encoding='utf-8')
-    assert '--- FICHIER: frontend/src/ok.js' in content
-    assert '--- FICHIER: logs/' not in content
-    assert '--- FICHIER: logs/secret.log' not in content
-    assert '--- FICHIER: frontend/node_modules/' not in content
-    assert '--- FICHIER: .env.local' not in content
+    assert '--- FILE: frontend/src/ok.js' in content
+    assert '--- FILE: logs/' not in content
+    assert '--- FILE: logs/secret.log' not in content
+    assert '--- FILE: frontend/node_modules/' not in content
+    assert '--- FILE: .env.local' not in content
     assert 'FAKE_SECRET' not in content
 
     output_no_ignore = tmp_path / 'nested_ignore_no_ignore_output.txt'
@@ -282,13 +282,13 @@ def test_nested_gitignore_and_security_patterns(tmp_path):
     ]
     result_no_ignore = run_aicc(args_no_ignore)
     assert result_no_ignore.returncode == 0, (
-        f"Le script a échoué avec le code {result_no_ignore.returncode}.\n"
+        f"Script failed with exit code {result_no_ignore.returncode}.\n"
         f"Stderr: {result_no_ignore.stderr}"
     )
     content_no_ignore = output_no_ignore.read_text(encoding='utf-8')
-    assert '--- FICHIER: logs/secret.log' in content_no_ignore
-    assert '--- FICHIER: frontend/node_modules/pkg/index.js' in content_no_ignore
-    assert '--- FICHIER: .env.local' not in content_no_ignore
+    assert '--- FILE: logs/secret.log' in content_no_ignore
+    assert '--- FILE: frontend/node_modules/pkg/index.js' in content_no_ignore
+    assert '--- FILE: .env.local' not in content_no_ignore
     assert 'FAKE_SECRET' not in content_no_ignore
 
 
@@ -315,7 +315,7 @@ def test_skip_ignore_files_disables_only_selected_types(tmp_path):
         cwd=tmp_path,
     )
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     content = output_file.read_text(encoding='utf-8')
     assert '<file path="events.log">' in content
     assert '<file path="cache/tmp.txt">' not in content
@@ -344,7 +344,7 @@ def test_ignore_files_keeps_only_listed_types(tmp_path):
         cwd=tmp_path,
     )
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     content = output_file.read_text(encoding='utf-8')
     assert '<file path="events.log">' in content
     assert '<file path="cache/tmp.txt">' not in content
@@ -369,8 +369,8 @@ def test_output_json_stdout_without_file_creation(tmp_path):
         cwd=tmp_path,
     )
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
-    assert not output_file.exists(), "Le fichier de sortie ne doit pas être créé en mode stdout."
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
+    assert not output_file.exists(), "Output file must not be created in stdout mode."
     payload = json.loads(result.stdout.strip().splitlines()[-1])
     assert payload['status'] == 'success'
     assert payload['output_destination'] == 'stdout'
@@ -378,7 +378,7 @@ def test_output_json_stdout_without_file_creation(tmp_path):
 
 
 def test_git_diff_mode_with_invalid_ref_fails(tmp_path):
-    """Valide qu'une référence Git invalide provoque une erreur claire."""
+    """Validate invalid Git reference produces a clear error."""
     repo_path = tmp_path / 'repo_invalid_ref'
     repo_path.mkdir()
     sha_a, _ = init_git_repo_with_two_commits(repo_path)
@@ -399,7 +399,7 @@ def test_git_diff_mode_with_invalid_ref_fails(tmp_path):
 
 
 def test_xml_format_output_structure(tmp_path):
-    """Valide la structure de sortie XML en mode concaténation standard."""
+    """Validate XML output structure in standard concatenation mode."""
     test_project_path = TESTS_DIR / 'test_projects' / 'basic_project'
     output_file = tmp_path / 'output.xml'
 
@@ -414,7 +414,7 @@ def test_xml_format_output_structure(tmp_path):
 
     result = run_aicc(args)
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     content = output_file.read_text(encoding='utf-8')
     assert '<repository>' in content
     assert '<directory_structure>' in content
@@ -424,7 +424,7 @@ def test_xml_format_output_structure(tmp_path):
 
 
 def test_markdown_format_output_structure(tmp_path):
-    """Valide la structure de sortie Markdown en mode concaténation standard."""
+    """Validate Markdown output structure in standard concatenation mode."""
     test_project_path = TESTS_DIR / 'test_projects' / 'basic_project'
     output_file = tmp_path / 'output.md'
 
@@ -439,7 +439,7 @@ def test_markdown_format_output_structure(tmp_path):
 
     result = run_aicc(args)
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     content = output_file.read_text(encoding='utf-8')
     assert '# Project Context' in content
     assert '## Directory Structure' in content
@@ -449,7 +449,7 @@ def test_markdown_format_output_structure(tmp_path):
 
 
 def test_tree_only_xml_omits_files_section(tmp_path):
-    """Valide que --tree-only en XML ne génère pas la section <files>."""
+    """Validate --tree-only in XML omits the <files> section."""
     test_project_path = TESTS_DIR / 'test_projects' / 'basic_project'
     output_file = tmp_path / 'tree_only.xml'
 
@@ -465,7 +465,7 @@ def test_tree_only_xml_omits_files_section(tmp_path):
 
     result = run_aicc(args)
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     content = output_file.read_text(encoding='utf-8')
     assert '<repository>' in content
     assert '<directory_structure>' in content
@@ -473,7 +473,7 @@ def test_tree_only_xml_omits_files_section(tmp_path):
 
 
 def test_tree_only_markdown_omits_files_section(tmp_path):
-    """Valide que --tree-only en Markdown ne génère pas la section fichiers."""
+    """Validate --tree-only in Markdown omits the files section."""
     test_project_path = TESTS_DIR / 'test_projects' / 'basic_project'
     output_file = tmp_path / 'tree_only.md'
 
@@ -489,7 +489,7 @@ def test_tree_only_markdown_omits_files_section(tmp_path):
 
     result = run_aicc(args)
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     content = output_file.read_text(encoding='utf-8')
     assert '# Project Context' in content
     assert '## Directory Structure' in content
@@ -498,7 +498,7 @@ def test_tree_only_markdown_omits_files_section(tmp_path):
 
 
 def test_xml_format_escapes_file_content(tmp_path):
-    """Valide l'échappement XML du contenu des fichiers concaténés."""
+    """Validate XML escaping of concatenated file content."""
     project_path = tmp_path / 'xml_escape_project'
     project_path.mkdir()
     target_file = project_path / 'snippet.txt'
@@ -515,14 +515,14 @@ def test_xml_format_escapes_file_content(tmp_path):
 
     result = run_aicc(args)
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     content = output_file.read_text(encoding='utf-8')
     assert '&lt;tag&gt;&amp;value&lt;/tag&gt;' in content
     assert '<tag>&value</tag>' not in content
 
 
 def test_clipboard_limit_skips_copy_when_output_is_too_large(tmp_path):
-    """Valide que la copie est annulée si la sortie dépasse --clipboard-limit."""
+    """Validate copy is skipped when output exceeds --clipboard-limit."""
     project_path = tmp_path / 'clipboard_limit_project'
     project_path.mkdir()
     (project_path / 'big.txt').write_text("A" * 3000, encoding='utf-8')
@@ -538,14 +538,14 @@ def test_clipboard_limit_skips_copy_when_output_is_too_large(tmp_path):
 
     result = run_aicc(args)
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
-    assert "dépasse la limite du presse-papiers" in result.stderr
-    assert "Contenu copié dans le presse-papiers." not in result.stdout
-    assert "Contenu envoyé au presse-papiers via SSH (OSC 52)." not in result.stdout
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
+    assert "exceeds the clipboard limit" in result.stderr
+    assert "Content copied to clipboard." not in result.stdout
+    assert "Content sent to clipboard via SSH (OSC 52)." not in result.stdout
 
 
 def test_no_clipboard_disables_automatic_copy(tmp_path):
-    """Valide que --no-clipboard empêche toute tentative de copie."""
+    """Validate --no-clipboard prevents any copy attempt."""
     project_path = tmp_path / 'no_clipboard_project'
     project_path.mkdir()
     (project_path / 'small.txt').write_text("hello\n", encoding='utf-8')
@@ -561,13 +561,13 @@ def test_no_clipboard_disables_automatic_copy(tmp_path):
 
     result = run_aicc(args)
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
-    assert "Contenu copié dans le presse-papiers." not in result.stdout
-    assert "Contenu envoyé au presse-papiers via SSH (OSC 52)." not in result.stdout
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
+    assert "Content copied to clipboard." not in result.stdout
+    assert "Content sent to clipboard via SSH (OSC 52)." not in result.stdout
 
 
 def test_default_output_path_uses_build_and_format_extension(tmp_path):
-    """Valide le fallback output vers build/aicc_context.<ext> si non fourni."""
+    """Validate output fallback to build/aicc_context.<ext> when not provided."""
     project_path = tmp_path / 'default_output_project'
     project_path.mkdir()
     (project_path / 'snippet.py').write_text("print('ok')\n", encoding='utf-8')
@@ -582,13 +582,13 @@ def test_default_output_path_uses_build_and_format_extension(tmp_path):
         cwd=tmp_path,
     )
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     generated_file = tmp_path / 'build' / 'aicc_context.xml'
-    assert generated_file.exists(), "Le fichier build/aicc_context.xml n'a pas été généré."
+    assert generated_file.exists(), "build/aicc_context.xml was not generated."
 
 
 def test_zero_config_auto_detects_aicc_yaml(tmp_path):
-    """Valide la détection automatique de .aicc.yaml sans --config."""
+    """Validate automatic .aicc.yaml detection without --config."""
     project_path = tmp_path / 'auto_config_project'
     project_path.mkdir()
     (project_path / 'keep.py').write_text("print('keep')\n", encoding='utf-8')
@@ -614,14 +614,14 @@ def test_zero_config_auto_detects_aicc_yaml(tmp_path):
         cwd=tmp_path,
     )
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     content = output_file.read_text(encoding='utf-8')
     assert '<file path="keep.py">' in content
     assert '<file path="skip.txt">' not in content
 
 
 def test_zero_config_does_not_create_config_file(tmp_path):
-    """Valide qu'aucun config.yaml n'est créé si aucun fichier n'est trouvé."""
+    """Validate no config.yaml is created when no config file is found."""
     project_path = tmp_path / 'no_config_project'
     project_path.mkdir()
     (project_path / 'main.py').write_text("print('hi')\n", encoding='utf-8')
@@ -636,12 +636,12 @@ def test_zero_config_does_not_create_config_file(tmp_path):
         cwd=tmp_path,
     )
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
     assert not (project_path / 'config.yaml').exists()
 
 
 def test_console_reports_config_and_ignore_usage(tmp_path):
-    """Valide l'affichage console du mode config et des ignore files détectés/utilisés."""
+    """Validate console display of config mode and detected/used ignore files."""
     project_path = tmp_path / 'console_report_project'
     project_path.mkdir()
     (project_path / '.aicc.yaml').write_text(
@@ -672,10 +672,10 @@ def test_console_reports_config_and_ignore_usage(tmp_path):
         cwd=tmp_path,
     )
 
-    assert result.returncode == 0, f"Le script a échoué avec le code {result.returncode}.\nStderr: {result.stderr}"
-    assert "Configuration utilisée :" in result.stderr
-    assert "auto-détectée" in result.stderr
-    assert "Fichiers d'ignore détectés" in result.stderr
-    assert ".gitignore (trouve+utilise)" in result.stderr
-    assert ".dockerignore (trouve+utilise)" in result.stderr
-    assert ".npmignore (trouve+utilise(vide))" in result.stderr
+    assert result.returncode == 0, f"Script failed with exit code {result.returncode}.\nStderr: {result.stderr}"
+    assert "Configuration used:" in result.stderr
+    assert "auto-detected" in result.stderr
+    assert "Ignore files detected" in result.stderr
+    assert ".gitignore (found+used)" in result.stderr
+    assert ".dockerignore (found+used)" in result.stderr
+    assert ".npmignore (found+used(empty))" in result.stderr

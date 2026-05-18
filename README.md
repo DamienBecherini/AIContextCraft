@@ -250,14 +250,14 @@ When writing `include_patterns` and exclusion filters:
 - Prefer `/` as separator, even on Windows.
 - Unicode characters (accents, emoji) are supported directly.
 - If you must write backslashes, avoid YAML double-quoted traps:
-  - use single quotes: `'🚀 Projets\🏰 Proxmox Homelab\**'`
-  - or escape backslashes in double quotes: `"🚀 Projets\\\\🏰 Proxmox Homelab\\\\**"`
+  - use single quotes: `'🚀 Projects\🏰 Proxmox Homelab\**'`
+  - or escape backslashes in double quotes: `"🚀 Projects\\\\🏰 Proxmox Homelab\\\\**"`
 
 Recommended example:
 
 ```yaml
 include_patterns:
-  - "🚀 Projets/🏰 Proxmox Homelab/**"
+  - "🚀 Projects/🏰 Proxmox Homelab/**"
 ```
 
 ## 🗺️ Roadmap

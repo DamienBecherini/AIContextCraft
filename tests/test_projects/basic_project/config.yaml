@@ -1,4 +1,4 @@
-# Configuration simple pour le test
+# Simple configuration for this test
 include_patterns:
   - '**/*'
 common_filters:
@@ -6,5 +6,5 @@ common_filters:
   - "build/"
   - "expected_output.txt"
   - "*.log"
-# On laisse les .md dans l'arbre pour ce test
+# Keep .md files in the tree for this test
 tree_only_filters: []

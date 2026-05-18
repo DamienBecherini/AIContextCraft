@@ -1,6 +1,6 @@
 # Git Diff Flow
 
-Ce diagramme de sequence decrit le mode dedie `--git-diff REF_A REF_B`.
+This sequence diagram describes the dedicated `--git-diff REF_A REF_B` mode.
 
 ```mermaid
 sequenceDiagram

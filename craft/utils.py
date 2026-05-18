@@ -64,13 +64,13 @@ def get_file_stats(content_str, encoding='utf-8'):
             encoding_tiktoken = tiktoken.get_encoding("cl100k_base")
             tokens = len(encoding_tiktoken.encode(content_str))
         except Exception as e:
-            logging.error(f"Erreur Tiktoken : {e}")
-            tokens = "Erreur"
-    return f"Taille: {formatted_size} ({total_bytes:,} octets), Tokens (estim.): {tokens}"
+            logging.error(f"Tiktoken error: {e}")
+            tokens = "Error"
+    return f"Size: {formatted_size} ({total_bytes:,} bytes), Tokens (est.): {tokens}"
 
 
 def read_file_with_fallback(file_path: Path, default_encoding: str = "utf-8") -> str:
-    """Lit un fichier texte avec détection d'encodage en fallback."""
+    """Read a text file with encoding detection as fallback."""
     try:
         with open(file_path, "r", encoding=default_encoding, errors="strict") as f:
             return f.read()
@@ -82,21 +82,21 @@ def read_file_with_fallback(file_path: Path, default_encoding: str = "utf-8") ->
             if match is not None:
                 detected_encoding = match.encoding or "unknown"
                 logging.info(
-                    "Encodage %s détecté pour %s (fallback après échec %s).",
+                    "Encoding %s detected for %s (fallback after %s failure).",
                     detected_encoding,
                     file_path,
                     default_encoding,
                 )
                 return str(match)
-        except Exception as exc:  # pragma: no cover - garde-fou défensif
+        except Exception as exc:  # pragma: no cover - defensive safeguard
             logging.warning(
-                "Détection d'encodage échouée pour %s: %s. Fallback errors='replace'.",
+                "Encoding detection failed for %s: %s. Falling back to errors='replace'.",
                 file_path,
                 exc,
             )
 
         logging.warning(
-            "Aucun encodage fiable détecté pour %s. Lecture avec %s + errors='replace'.",
+            "No reliable encoding detected for %s. Reading with %s + errors='replace'.",
             file_path,
             default_encoding,
         )

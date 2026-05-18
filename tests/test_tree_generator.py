@@ -67,7 +67,7 @@ def test_generate_tree_marks_concatenated_and_indicative():
     assert f"{SYMBOL_CONCATENATED} main.py" in tree
     assert f"{SYMBOL_INDICATIVE} README.md" in tree
     assert "README.md —" not in tree
-    assert "mixed/" in tree and "(Total réel :" in tree
+    assert "mixed/" in tree and "(Real total:" in tree
 
 
 def test_format_extension_summary_dual_totals(tmp_path):
@@ -80,9 +80,9 @@ def test_format_extension_summary_dual_totals(tmp_path):
 
     summary = format_extension_summary(tree_files, concatenated)
 
-    assert "Extensions (fichiers concaténés)" in summary
+    assert "Extensions (concatenated files)" in summary
     assert ".py" in summary
-    assert "(Total réel :" in summary
+    assert "(Real total:" in summary
 
 
 def test_format_extension_summary_no_extension_label(tmp_path):

@@ -1,6 +1,6 @@
 # Run Standard Flow
 
-Ce diagramme de sequence decrit le chemin principal de `python main.py` hors mode `--git-diff`.
+This sequence diagram describes the main path of `python main.py` outside `--git-diff` mode.
 
 ```mermaid
 sequenceDiagram

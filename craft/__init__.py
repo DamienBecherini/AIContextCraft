@@ -1,1 +1,1 @@
-"""AI Context Craft — logique métier modulaire."""
+"""AI Context Craft — modular business logic."""

@@ -8,15 +8,15 @@ if TYPE_CHECKING:
     from craft.filter_manager import FilterManager
 
 TREE_LEGEND = (
-    "Légende : ● fichier concaténé dans le contenu ci-dessous ; "
-    "○ fichier affiché à titre indicatif (exclu par project_only_filters). "
-    "Les tailles des dossiers et de la section Extensions indiquent d'abord le total "
-    "des fichiers ●, puis entre parenthèses le total réel de tous les fichiers visibles dans l'arbre."
+    "Legend: ● file concatenated in the content below; "
+    "○ file shown for reference only (excluded by project_only_filters). "
+    "Folder and Extensions section sizes show concatenated ● totals first, "
+    "then (Real total: …) for all files visible in the tree."
 )
 
 SYMBOL_CONCATENATED = "●"
 SYMBOL_INDICATIVE = "○"
-NO_EXTENSION_LABEL = "(sans extension)"
+NO_EXTENSION_LABEL = "(no extension)"
 
 
 def build_tree_legend() -> str:
@@ -122,7 +122,7 @@ def _format_dir_suffix(concat_size: int, real_size: int) -> str:
         return ""
     if concat_size == real_size:
         return f" — {format_bytes(concat_size)}"
-    return f" — {format_bytes(concat_size)} (Total réel : {format_bytes(real_size)})"
+    return f" — {format_bytes(concat_size)} (Real total: {format_bytes(real_size)})"
 
 
 def _extension_key(path: Path) -> str:
@@ -144,9 +144,9 @@ def format_extension_summary(tree_file_paths: set[Path], concatenated_paths: set
             concat_by_ext[ext] = concat_by_ext.get(ext, 0) + size
 
     if not concat_by_ext:
-        return "Extensions (fichiers concaténés) :\n  (aucune)"
+        return "Extensions (concatenated files):\n  (none)"
 
-    lines = ["Extensions (fichiers concaténés) :"]
+    lines = ["Extensions (concatenated files):"]
     for ext in sorted(concat_by_ext.keys(), key=lambda e: e.lower()):
         concat_size = concat_by_ext[ext]
         real_size = real_by_ext.get(ext, concat_size)
@@ -154,7 +154,7 @@ def format_extension_summary(tree_file_paths: set[Path], concatenated_paths: set
             lines.append(f"  {ext:<20} {format_bytes(concat_size)}")
         else:
             lines.append(
-                f"  {ext:<20} {format_bytes(concat_size)} (Total réel : {format_bytes(real_size)})"
+                f"  {ext:<20} {format_bytes(concat_size)} (Real total: {format_bytes(real_size)})"
             )
     return "\n".join(lines)
 
@@ -167,13 +167,13 @@ def generate_tree(
     ignore_manager=None,
 ) -> tuple[str, set[Path]]:
     if concatenated_paths is None:
-        # Nouvelle signature : generate_tree(directory, filter_manager, concatenated_paths, ...)
+        # New signature: generate_tree(directory, filter_manager, concatenated_paths, ...)
         concatenated_paths_set = set(exclude_spec_or_concatenated_paths)
         final_paths_for_tree = _collect_tree_paths(
             directory, filter_or_include_spec, ignore_manager=ignore_manager
         )
     else:
-        # Signature historique : generate_tree(directory, include_spec, exclude_spec, concatenated_paths, ...)
+        # Legacy signature: generate_tree(directory, include_spec, exclude_spec, concatenated_paths, ...)
         concatenated_paths_set = set(concatenated_paths)
         final_paths_for_tree = _collect_tree_paths(
             directory,
@@ -186,7 +186,7 @@ def generate_tree(
         directory, final_paths_for_tree, concatenated_paths_set
     )
 
-    tree_lines = [build_tree_legend(), f"Arbre du projet : {directory.resolve()}"]
+    tree_lines = [build_tree_legend(), f"Project tree: {directory.resolve()}"]
     paths = sorted(final_paths_for_tree)
 
     last_in_level = {}

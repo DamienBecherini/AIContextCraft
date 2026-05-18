@@ -25,7 +25,7 @@ def maybe_copy_to_clipboard(clipboard_enabled: bool, content: str, console: Cons
 
     try:
         pyperclip.copy(content)
-        console.print("[green]Contenu copié dans le presse-papiers.[/green]")
+        console.print("[green]Content copied to clipboard.[/green]")
     except (
         pyperclip.PyperclipException,
         getattr(pyperclip, "PyperclipWindowsException", pyperclip.PyperclipException),
@@ -34,17 +34,17 @@ def maybe_copy_to_clipboard(clipboard_enabled: bool, content: str, console: Cons
             encoded = base64.b64encode(content.encode('utf-8')).decode('ascii')
             sys.stdout.write(f"\x1b]52;c;{encoded}\x07")
             sys.stdout.flush()
-            console.print("[green]Contenu envoyé au presse-papiers via SSH (OSC 52).[/green]")
+            console.print("[green]Content sent to clipboard via SSH (OSC 52).[/green]")
         except Exception as e:
             logging.warning(
-                "Fallback OSC 52 indisponible pour la copie presse-papiers: %s",
+                "OSC 52 fallback unavailable for clipboard copy: %s",
                 e,
             )
 
 
 def should_copy_to_clipboard(args: argparse.Namespace, content: str, console: Console) -> bool:
     if args.no_clipboard:
-        logging.info("Copie presse-papiers désactivée via --no-clipboard.")
+        logging.info("Clipboard copy disabled via --no-clipboard.")
         return False
 
     content_size_bytes = len(content.encode(args.encoding))
@@ -54,13 +54,13 @@ def should_copy_to_clipboard(args: argparse.Namespace, content: str, console: Co
     if content_size_mb > clipboard_limit_mb:
         console.print(
             (
-                f"[yellow]⚠️ Le fichier généré ({content_size_mb:.2f} Mo) dépasse la limite "
-                f"du presse-papiers ({clipboard_limit_mb:.2f} Mo). "
-                "Copie annulée. Utilisez -cb <taille> pour forcer.[/yellow]"
+                f"[yellow]⚠️ Generated output ({content_size_mb:.2f} MB) exceeds the "
+                f"clipboard limit ({clipboard_limit_mb:.2f} MB). "
+                "Copy skipped. Use -cb <size> to raise the limit.[/yellow]"
             )
         )
         logging.info(
-            "Copie presse-papiers annulée (%.2f Mo > %.2f Mo).",
+            "Clipboard copy skipped (%.2f MB > %.2f MB).",
             content_size_mb,
             clipboard_limit_mb,
         )
@@ -76,15 +76,15 @@ def print_config_resolution_status(
     explicit_config_path: Path | None,
 ) -> None:
     if config_source == "explicit":
-        console.print(f"[cyan]Configuration utilisée :[/cyan] explicite ({config_path.resolve()})")
+        console.print(f"[cyan]Configuration used:[/cyan] explicit ({config_path.resolve()})")
     elif config_source == "auto":
-        console.print(f"[cyan]Configuration utilisée :[/cyan] auto-détectée ({config_path.resolve()})")
+        console.print(f"[cyan]Configuration used:[/cyan] auto-detected ({config_path.resolve()})")
     elif config_source == "explicit_missing":
         console.print(
-            f"[yellow]Configuration :[/yellow] fichier explicite introuvable ({explicit_config_path}), fallback defaults."
+            f"[yellow]Configuration:[/yellow] explicit file not found ({explicit_config_path}), using defaults."
         )
     else:
-        console.print("[yellow]Configuration :[/yellow] aucun fichier trouvé, fallback defaults.")
+        console.print("[yellow]Configuration:[/yellow] no config file found, using defaults.")
 
 
 def print_ignore_report(
@@ -95,16 +95,16 @@ def print_ignore_report(
 ) -> None:
     ignore_report = ignore_manager.get_ignore_file_report()
     ignore_names = ", ".join(ignore_manager.IGNORE_FILENAMES)
-    header = f"[cyan]Fichiers d'ignore détectés ({ignore_names}) :[/cyan]"
+    header = f"[cyan]Ignore files detected ({ignore_names}):[/cyan]"
     if disabled:
-        header += " [yellow](filtrage ignore désactivé via --no-ignore)[/yellow]"
+        header += " [yellow](ignore filtering disabled via --no-ignore)[/yellow]"
     elif ignore_manager.disabled_ignore_types:
         disabled_types = ", ".join(sorted(ignore_manager.disabled_ignore_types))
-        header += f" [yellow](types désactivés: {disabled_types})[/yellow]"
+        header += f" [yellow](disabled types: {disabled_types})[/yellow]"
     console.print(header)
 
     if not ignore_report:
-        console.print("  - (aucun)")
+        console.print("  - (none)")
         return
 
     for item in ignore_report:
@@ -115,20 +115,20 @@ def print_ignore_report(
             rel_path = ignore_path.as_posix()
 
         if item["invalid"]:
-            status = "trouve+erreur"
+            status = "found+error"
         elif item["used"] and item["active"]:
-            status = "trouve+utilise"
+            status = "found+used"
         elif item["used"]:
-            status = "trouve+utilise(vide)"
+            status = "found+used(empty)"
         elif disabled:
-            status = "trouve+non_utilise(desactive)"
+            status = "found+unused(disabled)"
         elif (
             IgnoreManager.resolve_ignore_type(ignore_path.name)
             in ignore_manager.disabled_ignore_types
         ):
-            status = "trouve+non_utilise(desactive_type)"
+            status = "found+unused(disabled_type)"
         else:
-            status = "trouve+non_utilise"
+            status = "found+unused"
 
         console.print(f"  - {rel_path} ({status})")
 
@@ -145,8 +145,8 @@ def parse_ignore_type_values(raw_value: str | None, parser: argparse.ArgumentPar
     invalid = sorted({value for value in values if value not in valid_types})
     if invalid:
         parser.error(
-            f"{flag_name}: type(s) invalide(s): {', '.join(invalid)}. "
-            f"Valeurs autorisées: {', '.join(sorted(valid_types))}."
+            f"{flag_name}: invalid type(s): {', '.join(invalid)}. "
+            f"Allowed values: {', '.join(sorted(valid_types))}."
         )
     return set(values)
 
@@ -184,59 +184,59 @@ def emit_json_report(report: dict[str, Any]) -> None:
 
 def main():
     console = Console(stderr=True)
-    parser = argparse.ArgumentParser(description="Agrège les fichiers d'un projet en un seul fichier texte pour une IA.")
-    parser.add_argument('-c', '--config', type=str, help="Chemin vers le fichier de configuration YAML.")
-    parser.add_argument('-p', '--project', type=str, help="Chemin vers le projet cible.")
-    parser.add_argument('-o', '--output', type=str, help="Chemin vers le fichier de sortie.")
-    parser.add_argument('--no-timestamp', action='store_true', help="Ne pas ajouter de timestamp au nom du fichier de sortie.")
-    parser.add_argument('--strip-comments', action='store_true', help="Supprimer les commentaires des fichiers.")
-    parser.add_argument('--headers-only', action='store_true', help="Ne conserver que les signatures de fonctions/méthodes.")
-    parser.add_argument('--tree-only', action='store_true', help="Génère uniquement l'arbre du projet (tailles, extensions) sans le contenu des fichiers.")
-    parser.add_argument('--dry-run', action='store_true', help="Simule l'opération sans écrire de fichier.")
-    parser.add_argument('--encoding', type=str, default='utf-8', help="Encodage des fichiers (défaut: utf-8).")
+    parser = argparse.ArgumentParser(description="Aggregate project files into a single output file for LLM context.")
+    parser.add_argument('-c', '--config', type=str, help="Path to the YAML configuration file.")
+    parser.add_argument('-p', '--project', type=str, help="Path to the target project.")
+    parser.add_argument('-o', '--output', type=str, help="Path to the output file.")
+    parser.add_argument('--no-timestamp', action='store_true', help="Do not append a timestamp to the output filename.")
+    parser.add_argument('--strip-comments', action='store_true', help="Strip comments from source files.")
+    parser.add_argument('--headers-only', action='store_true', help="Keep only function/method signatures.")
+    parser.add_argument('--tree-only', action='store_true', help="Generate only the project tree (sizes, extensions) without file contents.")
+    parser.add_argument('--dry-run', action='store_true', help="Simulate the run without writing a file.")
+    parser.add_argument('--encoding', type=str, default='utf-8', help="File encoding (default: utf-8).")
     parser.add_argument(
         '--no-ignore',
         action='store_true',
         help=(
-            "Désactive tous les ignore files hiérarchiques "
+            "Disable all hierarchical ignore files "
             "(.gitignore, .dockerignore, .cursorignore, .npmignore) "
-            "(les règles de sécurité restent actives)."
+            "(security rules remain active)."
         ),
     )
     parser.add_argument(
         '--skip-ignore-files',
         type=str,
         help=(
-            "Désactive sélectivement certains types d'ignore files "
-            "(valeurs: gitignore,dockerignore,cursorignore,npmignore)."
+            "Selectively disable ignore file types "
+            "(values: gitignore,dockerignore,cursorignore,npmignore)."
         ),
     )
     parser.add_argument(
         '--ignore-files',
         type=str,
         help=(
-            "Active uniquement les types listés (valeurs: gitignore,dockerignore,cursorignore,npmignore). "
-            "Alias inverse de --skip-ignore-files."
+            "Enable only the listed types (values: gitignore,dockerignore,cursorignore,npmignore). "
+            "Inverse alias of --skip-ignore-files."
         ),
     )
-    parser.add_argument('--git-diff', nargs=2, metavar=('REF_A', 'REF_B'), help="Mode spécial: génère un rapport Markdown du diff Git global entre deux révisions.")
-    parser.add_argument('--format', choices=['text', 'xml', 'markdown'], default='xml', help="Format de sortie: xml (défaut), text ou markdown.")
+    parser.add_argument('--git-diff', nargs=2, metavar=('REF_A', 'REF_B'), help="Special mode: generate a Markdown report of the global Git diff between two revisions.")
+    parser.add_argument('--format', choices=['text', 'xml', 'markdown'], default='xml', help="Output format: xml (default), text, or markdown.")
     parser.add_argument(
         '--output-format',
         choices=['human', 'json'],
         default='human',
-        help="Format des messages d'exécution: human (défaut) ou json (stdout structuré).",
+        help="Execution message format: human (default) or json (structured stdout).",
     )
     parser.add_argument(
         '--output-destination',
         choices=['file', 'stdout', 'both', 'none'],
         default='file',
-        help="Destination du contenu généré: file (défaut), stdout, both ou none.",
+        help="Generated content destination: file (default), stdout, both, or none.",
     )
-    parser.add_argument('-cb', '--clipboard-limit', type=float, default=10.0, metavar='MB', help="Taille maximum en Mo pour la copie automatique dans le presse-papiers (défaut: 10.0).")
-    parser.add_argument('--no-clipboard', action='store_true', help="Désactive totalement la copie automatique dans le presse-papiers.")
-    parser.add_argument('-v', '--verbose', action='store_true', help="Affiche des informations détaillées sur la console.")
-    parser.add_argument('-q', '--quiet', action='store_true', help="Réduit les logs console au strict minimum (erreurs).")
+    parser.add_argument('-cb', '--clipboard-limit', type=float, default=10.0, metavar='MB', help="Max size in MB for automatic clipboard copy (default: 10.0).")
+    parser.add_argument('--no-clipboard', action='store_true', help="Disable automatic clipboard copy entirely.")
+    parser.add_argument('-v', '--verbose', action='store_true', help="Show detailed information on the console.")
+    parser.add_argument('-q', '--quiet', action='store_true', help="Reduce console logs to errors only.")
     args = parser.parse_args()
 
     DEFAULT_CONFIG = {
@@ -249,11 +249,11 @@ def main():
     }
 
     if args.clipboard_limit < 0:
-        parser.error("--clipboard-limit doit être >= 0.")
+        parser.error("--clipboard-limit must be >= 0.")
     if args.verbose and args.quiet:
-        parser.error("--verbose et --quiet sont incompatibles.")
+        parser.error("--verbose and --quiet are incompatible.")
     if args.skip_ignore_files and args.ignore_files:
-        parser.error("--skip-ignore-files et --ignore-files sont incompatibles.")
+        parser.error("--skip-ignore-files and --ignore-files are incompatible.")
 
     config = DEFAULT_CONFIG.copy()
     config_path = None
@@ -267,7 +267,7 @@ def main():
         else:
             config_source = "explicit_missing"
             logging.info(
-                "Fichier de configuration explicite introuvable: '%s'. Mode Zero-Config activé.",
+                "Explicit configuration file not found: '%s'. Zero-Config mode enabled.",
                 explicit_config_path,
             )
     else:
@@ -278,11 +278,11 @@ def main():
             if candidate_path.exists():
                 config_path = candidate_path
                 config_source = "auto"
-                logging.info(f"Fichier de configuration trouvé automatiquement : '{candidate_path}'")
+                logging.info(f"Configuration file auto-detected: '{candidate_path}'")
                 break
         if config_path is None:
             config_source = "auto_missing"
-            logging.info("Aucun fichier de configuration trouvé. Mode Zero-Config activé (basé sur les ignore files hiérarchiques).")
+            logging.info("No configuration file found. Zero-Config mode enabled (hierarchical ignore files).")
 
     if config_path is not None:
         try:
@@ -290,17 +290,17 @@ def main():
                 config.update(yaml.safe_load(f) or {})
         except yaml.YAMLError as e:
             error_help = (
-                "\nConseils YAML pour les chemins avec caractères spéciaux :\n"
-                "  - Préférez '/' au lieu de '\\' dans les patterns.\n"
-                "  - En YAML double-quoted, '\\' est un caractère d'échappement.\n"
-                "  - Utilisez des quotes simples ('...') ou doublez les backslashes ('\\\\\\\\')."
+                "\nYAML tips for paths with special characters:\n"
+                "  - Prefer '/' instead of '\\' in patterns.\n"
+                "  - In double-quoted YAML, '\\' is an escape character.\n"
+                "  - Use single quotes ('...') or double backslashes ('\\\\\\\\')."
             )
-            sys.exit(f"ERREUR: Impossible de parser le fichier de configuration '{config_path}': {e}{error_help}")
+            sys.exit(f"ERROR: Unable to parse configuration file '{config_path}': {e}{error_help}")
 
     project_path = Path(args.project or config.get('project_path', '.')).resolve()
     content_format = args.format or config.get('output_format', 'xml')
     if content_format not in {'text', 'xml', 'markdown'}:
-        logging.warning(f"Format de sortie inconnu '{content_format}' dans la configuration. Fallback vers 'xml'.")
+        logging.warning(f"Unknown output format '{content_format}' in configuration. Falling back to 'xml'.")
         content_format = 'xml'
 
     output_path_str = args.output or config.get('output_path')
@@ -311,7 +311,7 @@ def main():
             'markdown': 'md',
         }
         output_path_str = f"./build/aicc_context.{default_extension_by_format[content_format]}"
-        logging.info("Aucun chemin de sortie fourni. Utilisation du chemin par défaut: '%s'", output_path_str)
+        logging.info("No output path provided. Using default path: '%s'", output_path_str)
 
     output_path = Path(output_path_str)
     if not args.no_timestamp:
@@ -323,19 +323,19 @@ def main():
     setup_logging(log_path, args.verbose, quiet=args.quiet, enable_file_logging=write_log_file)
 
     if args.dry_run and args.output_format != "json":
-        console.print("[bold yellow]--- MODE DRY RUN ACTIVÉ : AUCUN FICHIER NE SERA ÉCRIT ---[/bold yellow]")
+        console.print("[bold yellow]--- DRY RUN MODE: NO FILE WILL BE WRITTEN ---[/bold yellow]")
     if config_path is not None:
-        logging.info(f"Configuration chargée et fusionnée depuis '{config_path}'")
+        logging.info(f"Configuration loaded and merged from '{config_path}'")
     if args.output_format == "human" and not args.quiet:
         print_config_resolution_status(console, config_path, config_source, explicit_config_path)
 
     if args.git_diff:
         if content_format != 'markdown':
             logging.info(
-                f"Mode --git-diff: le format '{content_format}' est ignoré, sortie Markdown forcée."
+                f"--git-diff mode: format '{content_format}' is ignored; Markdown output forced."
             )
         ref_a, ref_b = args.git_diff
-        logging.info(f"Mode --git-diff activé: calcul du diff entre '{ref_a}' et '{ref_b}'")
+        logging.info(f"--git-diff mode enabled: computing diff between '{ref_a}' and '{ref_b}'")
         try:
             diff_content = get_git_diff(project_path, ref_a, ref_b)
         except RuntimeError as e:
@@ -343,7 +343,7 @@ def main():
             sys.exit(str(e))
 
         if not diff_content.strip():
-            diff_content = "Aucune différence détectée entre ces révisions.\n"
+            diff_content = "No differences detected between these revisions.\n"
 
         full_body = (
             f"# Diff Git: {ref_a} -> {ref_b}\n\n"
@@ -353,9 +353,9 @@ def main():
         )
         stats = get_file_stats(full_body, args.encoding)
         final_output_str = "".join([
-            "Ce fichier est un rapport de diff Git généré par AI Context Craft.\n",
-            f"Date de génération : {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
-            f"Statistiques du contenu : {stats}\n\n",
+            "This file is a Git diff report generated by AI Context Craft.\n",
+            f"Generation date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
+            f"Content statistics: {stats}\n\n",
             full_body
         ])
 
@@ -373,11 +373,11 @@ def main():
             with open(output_path, 'w', encoding=args.encoding) as f:
                 f.write(final_output_str)
             if args.output_format == "human" and not args.quiet:
-                console.print("\n[bold green]Opération terminée.[/bold green]")
-                console.print(f"[cyan]Fichier de sortie généré :[/cyan] {output_path.resolve()}")
+                console.print("\n[bold green]Done.[/bold green]")
+                console.print(f"[cyan]Output file:[/cyan] {output_path.resolve()}")
         elif args.dry_run and args.output_format == "human" and not args.quiet:
-            console.print("\n[bold yellow]Opération (dry run) terminée.[/bold yellow]")
-            console.print(f"[cyan]Le fichier de sortie aurait été :[/cyan] {output_path.resolve()}")
+            console.print("\n[bold yellow]Dry run complete.[/bold yellow]")
+            console.print(f"[cyan]Output file would be:[/cyan] {output_path.resolve()}")
 
         if args.output_destination != "none":
             maybe_copy_to_clipboard(should_copy_to_clipboard(args, final_output_str, console), final_output_str, console)
@@ -397,11 +397,11 @@ def main():
             emit_json_report(report)
         elif not args.quiet:
             if log_path is not None:
-                console.print(f"[cyan]Fichier de log généré :[/cyan] {log_path.resolve()}")
-            console.print(f"[magenta]Statistiques finales :[/magenta] {stats}")
+                console.print(f"[cyan]Log file:[/cyan] {log_path.resolve()}")
+            console.print(f"[magenta]Final statistics:[/magenta] {stats}")
         return
 
-    logging.info("Assemblage des filtres...")
+    logging.info("Assembling filters...")
     filter_manager = FilterManager(config, output_path)
     full_body_filters = config.get('full_body_filters') or []
 
@@ -426,29 +426,29 @@ def main():
     )
     if args.no_ignore:
         logging.info(
-            "Bouclier natif : ignore files (%s) désactivés (--no-ignore), règles de sécurité actives.",
+            "Native shield: ignore files (%s) disabled (--no-ignore); security rules active.",
             ", ".join(ignore_manager.IGNORE_FILENAMES),
         )
     elif disabled_ignore_types:
         logging.info(
-            "Bouclier natif : types d'ignore files désactivés: %s",
+            "Native shield: disabled ignore file types: %s",
             ", ".join(sorted(disabled_ignore_types)),
         )
     else:
         logging.info(
-            "Bouclier natif : ignore files hiérarchiques actifs (étage 1) : %s",
+            "Native shield: hierarchical ignore files active (stage 1): %s",
             ", ".join(ignore_manager.IGNORE_FILENAMES),
         )
 
     logging.info("="*50)
-    logging.info("CONFIGURATION FINALE DES FILTRES DE DÉBOGAGE")
-    logging.info(f"  - PATTERNS D'INCLUSION: {filter_manager.include_patterns}")
-    logging.info(f"  - FILTRES D'EXCLUSION (CONTENU): {filter_manager.project_filters}")
-    logging.info(f"  - FILTRES D'EXCLUSION (ARBRE): {filter_manager.tree_filters}")
+    logging.info("FINAL FILTER DEBUG CONFIGURATION")
+    logging.info(f"  - INCLUDE PATTERNS: {filter_manager.include_patterns}")
+    logging.info(f"  - EXCLUSION FILTERS (CONTENT): {filter_manager.project_filters}")
+    logging.info(f"  - EXCLUSION FILTERS (TREE): {filter_manager.tree_filters}")
     logging.info("="*50)
 
     if args.output_format != "json" and not args.quiet:
-        console.print("[bold]Concaténation des fichiers...[/bold]")
+        console.print("[bold]Concatenating files...[/bold]")
     builder = ContextBuilder(
         project_path=project_path,
         filter_manager=filter_manager,
@@ -461,7 +461,7 @@ def main():
     project_tree, extension_summary, files_data = builder.build()
 
     if not args.tree_only:
-        logging.info("Assemblage du fichier de sortie...")
+        logging.info("Assembling output file...")
         full_body = build_output(
             content_format,
             project_tree,
@@ -471,7 +471,7 @@ def main():
         )
         stats = get_file_stats(full_body, args.encoding)
     else:
-        logging.info("Mode --tree-only activé : saut de la lecture du contenu des fichiers.")
+        logging.info("--tree-only mode enabled: skipping file content reads.")
         full_body = build_output(
             content_format,
             project_tree,
@@ -479,12 +479,12 @@ def main():
             files_data,
             tree_only=True,
         )
-        stats = "N/A (Mode arbre uniquement)"
+        stats = "N/A (tree-only mode)"
 
     final_output_str = "".join([
-        "Ce fichier est une concaténation de plusieurs fichiers sources d'un projet.\n",
-        f"Date de génération : {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
-        f"Statistiques du contenu : {stats}\n\n",
+        "This file is a concatenation of several source files from a project.\n",
+        f"Generation date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
+        f"Content statistics: {stats}\n\n",
         full_body
     ])
 
@@ -498,11 +498,11 @@ def main():
         with open(output_path, 'w', encoding=args.encoding) as f:
             f.write(final_output_str)
         if args.output_format == "human" and not args.quiet:
-            console.print("\n[bold green]Opération terminée.[/bold green]")
-            console.print(f"[cyan]Fichier de sortie généré :[/cyan] {output_path.resolve()}")
+            console.print("\n[bold green]Done.[/bold green]")
+            console.print(f"[cyan]Output file:[/cyan] {output_path.resolve()}")
     elif args.dry_run and args.output_format == "human" and not args.quiet:
-        console.print("\n[bold yellow]Opération (dry run) terminée.[/bold yellow]")
-        console.print(f"[cyan]Le fichier de sortie aurait été :[/cyan] {output_path.resolve()}")
+        console.print("\n[bold yellow]Dry run complete.[/bold yellow]")
+        console.print(f"[cyan]Output file would be:[/cyan] {output_path.resolve()}")
 
     if args.output_destination != "none":
         maybe_copy_to_clipboard(should_copy_to_clipboard(args, final_output_str, console), final_output_str, console)
@@ -525,8 +525,8 @@ def main():
     if not args.quiet:
         print_ignore_report(console, project_path, ignore_manager, disabled=args.no_ignore)
         if log_path is not None:
-            console.print(f"[cyan]Fichier de log généré :[/cyan] {log_path.resolve()}")
-        console.print(f"[magenta]Statistiques finales :[/magenta] {stats}")
+            console.print(f"[cyan]Log file:[/cyan] {log_path.resolve()}")
+        console.print(f"[magenta]Final statistics:[/magenta] {stats}")
 
 
 if __name__ == '__main__':

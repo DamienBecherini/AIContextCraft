@@ -19,10 +19,10 @@ isProject: true
 
 # PRD: Documentation and roadmap update
 
-## Objective
+## 🎯 Objective
 The project evolved quickly; code is ahead of documentation. Synchronize `ROADMAP.md` and `README.md` with the current state (end of Phase 1).
 
-## 1. Update `ROADMAP.md`
+## 📝 1. Update `ROADMAP.md`
 
 ### State to reflect:
 - **Phase 0 (Foundation / Refactoring): ✅ COMPLETE.** (`craft/` architecture in place).
@@ -36,7 +36,7 @@ The project evolved quickly; code is ahead of documentation. Synchronize `ROADMA
 ### Next steps to highlight (new “Next Phase”):
 The roadmap should now point to **Phase 2: Universal Tool**, whose main goal is replacing the Python `ast` analyzer with **`tree-sitter`** for `--strip-comments` and analysis across all languages (JS, TS, Rust, C++, etc.), plus token splitting (`--max-tokens`).
 
-## 2. Update `README.md`
+## 📖 2. Update `README.md`
 
 Ensure the following are clearly explained to users:
 

@@ -1,49 +1,48 @@
-Ce fichier est une concaténation de plusieurs fichiers sources d'un projet.
-Date de génération : 2025-09-09 23:59:15
-Statistiques du contenu : Taille: 1.56 KB (1,602 octets), Tokens (estim.): 244
+This file is a concatenation of several source files from a project.
 
-Arbre du projet : /home/lachouette/utils/ai-context-craft/tests/test_projects/basic_project
-├── ● .gitignore — 51 B
-├── app/ — 125 B
-│   └── ● main.py — 125 B
-├── ● config.yaml — 211 B
-└── ● utils.py — 85 B
+Legend: ● file concatenated in the content below; ○ file shown for reference only (excluded by project_only_filters). Folder and Extensions section sizes show concatenated ● totals first, then (Real total: …) for all files visible in the tree.
+Project tree: /opt/AIContextCraft/tests/test_projects/basic_project
+├── ● .gitignore — 47 B
+├── app/ — 119 B
+│   └── ● main.py — 119 B
+├── ● config.yaml — 210 B
+└── ● utils.py — 80 B
 
-Extensions (fichiers concaténés) :
-  (sans extension)     51 B
-  .py                  210 B
-  .yaml                211 B
+Extensions (concatenated files):
+  (no extension)       47 B
+  .py                  199 B
+  .yaml                210 B
 
 --------------------------------------------------------------------------------
-CONTENU DES FICHIERS
+FILE CONTENTS
 --------------------------------------------------------------------------------
 
 
 ================================================================================
---- FICHIER: .gitignore
+--- FILE: .gitignore
 ================================================================================
 
-# Fichier à ignorer
+# File to ignore
 ignored_file.txt
 __pycache__/
 
 ================================================================================
---- FICHIER: app/main.py
+--- FILE: app/main.py
 ================================================================================
 
 # main.py
 import utils
 
 def main():
-    """Ceci est la fonction principale."""
+    """This is the main function."""
     print("Hello, World!")
     utils.helper()
 
 ================================================================================
---- FICHIER: config.yaml
+--- FILE: config.yaml
 ================================================================================
 
-# Configuration simple pour le test
+# Simple configuration for this test
 include_patterns:
   - '**/*'
 common_filters:
@@ -51,13 +50,14 @@ common_filters:
   - "build/"
   - "expected_output.txt"
   - "*.log"
-# On laisse les .md dans l'arbre pour ce test
+# Keep .md files in the tree for this test
 tree_only_filters: []
+
 ================================================================================
---- FICHIER: utils.py
+--- FILE: utils.py
 ================================================================================
 
 # utils.py
 def helper():
-    # Une fonction utilitaire
+    # A utility function
     print("Helper function.")

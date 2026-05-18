@@ -6,8 +6,8 @@ from pathlib import Path
 
 def strip_comments_from_code(content, file_path):
     """
-    Supprime les commentaires et les docstrings d'un fichier de code.
-    Utilise 'ast' pour une suppression robuste en Python.
+    Remove comments and docstrings from a code file.
+    Uses AST for robust stripping in Python.
     """
     file_ext = Path(file_path).suffix
 
@@ -46,8 +46,8 @@ def strip_comments_from_code(content, file_path):
 
         except (SyntaxError, Exception):
             logging.warning(
-                f"  -> AVERTISSEMENT: Impossible de parser/stripper les commentaires de {file_path}. "
-                "Fichier inclus tel quel."
+                f"  -> WARNING: Unable to parse/strip comments from {file_path}. "
+                "Including file as-is."
             )
             return content
 
@@ -61,7 +61,7 @@ def get_python_headers(content, full_body_filters_patterns):
     try:
         tree = ast.parse(content)
     except Exception as e:
-        return f"# ERREUR: Impossible de parser le fichier Python: {e}\n{content}"
+        return f"# ERROR: Unable to parse Python file: {e}\n{content}"
     output_lines = []
 
     def should_keep_full_body(name):

@@ -2,6 +2,6 @@
 import utils
 
 def main():
-    """Ceci est la fonction principale."""
+    """This is the main function."""
     print("Hello, World!")
     utils.helper()
