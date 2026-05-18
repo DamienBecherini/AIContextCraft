@@ -1,78 +1,78 @@
 ---
 name: phase-1-documentation
-overview: Mettre à jour ROADMAP.md et README.md pour refléter l'achèvement de la Phase 0 (Refactoring) et de la Phase 1 (UX, Formats LLM, Clipboard, Git Diff).
+overview: Update ROADMAP.md and README.md to reflect completion of Phase 0 (Refactoring) and Phase 1 (UX, LLM formats, Clipboard, Git Diff).
 todos:
   - id: update-roadmap
-    content: Modifier `ROADMAP.md` pour marquer les Phases 0 et 1 (ainsi que l'intégration Git diff) comme terminées, et redéfinir les prochaines étapes.
+    content: Update ROADMAP.md to mark Phases 0 and 1 (and Git diff integration) complete and redefine next steps.
     status: pending
   - id: update-readme-features
-    content: Ajouter les nouvelles fonctionnalités (Formats XML/Markdown, Clipboard via SSH, Git Diff) dans le `README.md`.
+    content: Add new features (XML/Markdown formats, SSH clipboard, Git Diff) to README.md.
     status: pending
   - id: update-readme-cli
-    content: Mettre à jour la section d'aide CLI du `README.md` avec les nouvelles options (`--format`, `-cb`, `--git-diff`).
+    content: Update README.md CLI help section with new options (--format, -cb, --git-diff).
     status: pending
   - id: save-report
-    content: Demander si le compte-rendu d'implémentation doit être sauvegardé.
+    content: Ask whether implementation report should be saved.
     status: pending
 isProject: true
 ---
 
-# PRD : Mise à jour de la Documentation et de la Roadmap
+# PRD: Documentation and roadmap update
 
-## 🎯 Objectif
-Le projet a évolué massivement et rapidement. Le code est maintenant en avance sur la documentation. Il faut synchroniser `ROADMAP.md` et `README.md` avec l'état actuel du code (fin de Phase 1).
+## Objective
+The project evolved quickly; code is ahead of documentation. Synchronize `ROADMAP.md` and `README.md` with the current state (end of Phase 1).
 
-## 📝 1. Mise à jour de `ROADMAP.md`
+## 1. Update `ROADMAP.md`
 
-### État actuel à refléter :
-- **Phase 0 (Fondation / Refactoring) : ✅ TERMINÉE.** (L'architecture `craft/` est en place).
-- **Phase 1 (Expérience "Pro") : ✅ TERMINÉE.** 
-  - A1. Barre de progression (Implémenté via `rich`).
-  - A2. Copie vers le presse-papiers (Implémenté avec support OSC 52 pour SSH).
-  - *Nouvelle sous-tâche complétée :* Formatage LLM-Optimized (XML, Markdown).
-- **Phase 3 (Intégration Git) : 🔄 EN COURS / PARTIELLEMENT TERMINÉE.**
-  - C1. Intégration Git `diff` (Implémenté avec succès).
+### State to reflect:
+- **Phase 0 (Foundation / Refactoring): ✅ COMPLETE.** (`craft/` architecture in place).
+- **Phase 1 (Pro experience): ✅ COMPLETE.**
+  - A1. Progress bar (implemented via `rich`).
+  - A2. Clipboard copy (implemented with OSC 52 for SSH).
+  - *Additional completed item:* LLM-optimized formatting (XML, Markdown).
+- **Phase 3 (Git integration): 🔄 IN PROGRESS / PARTIALLY COMPLETE.**
+  - C1. Git `diff` integration (successfully implemented).
 
-### Prochaines étapes à mettre en valeur (La nouvelle "Prochaine Phase") :
-La roadmap doit maintenant pointer vers la **Phase 2 : L'Outil Universel**, dont l'objectif principal sera de remplacer l'analyseur `ast` Python par **`tree-sitter`** pour permettre le `--strip-comments` et l'analyse de tous les langages (JS, TS, Rust, C++, etc.), ainsi que le fractionnement par tokens (`--max-tokens`).
+### Next steps to highlight (new “Next Phase”):
+The roadmap should now point to **Phase 2: Universal Tool**, whose main goal is replacing the Python `ast` analyzer with **`tree-sitter`** for `--strip-comments` and analysis across all languages (JS, TS, Rust, C++, etc.), plus token splitting (`--max-tokens`).
 
-## 📖 2. Mise à jour de `README.md`
+## 2. Update `README.md`
 
-Assure-toi que les éléments suivants sont clairement expliqués aux utilisateurs :
+Ensure the following are clearly explained to users:
 
-### Nouvelles fonctionnalités phares :
-1. **Formats LLM-Optimisés (`--format {text,xml,markdown}`)** : Expliquer que `xml` est le format recommandé pour Anthropic (Claude) et OpenAI car il structure parfaitement le contexte avec des balises `<repository>`, `<directory_structure>` et `<files>`.
-2. **Copie intelligente dans le presse-papiers (`-cb` ou `--clipboard`)** : Expliquer que cette option copie directement le résultat. Mentionner la magie du support **OSC 52** : cela fonctionne même si l'outil est lancé depuis un serveur Linux distant via une connexion SSH !
-3. **Mode Git Diff (`--git-diff <ref_a> <ref_b>`)** : Expliquer que ce mode génère un rapport Markdown parfait des différences entre deux branches ou commits, idéal pour rédiger des descriptions de Pull Request avec l'IA.
-4. **Interface Console Moderne** : Mentionner l'ajout de barres de progression et de logs colorés pour les grands projets.
+### Key new features:
+1. **LLM-optimized formats (`--format {text,xml,markdown}`)**: Explain that `xml` is recommended for Anthropic (Claude) and OpenAI because it structures context with `<repository>`, `<directory_structure>`, and `<files>` tags.
+2. **Smart clipboard copy (`-cb` or `--clipboard`)**: Explain direct result copy. Mention **OSC 52** support: works even when run on a remote Linux server over SSH.
+3. **Git Diff mode (`--git-diff <ref_a> <ref_b>`)**: Explain Markdown report of differences between branches or commits, ideal for AI-assisted PR descriptions.
+4. **Modern console UI**: Mention progress bars and colored logs for large projects.
 
-### Mise à jour de l'aide CLI :
-Mettre à jour le bloc de code montrant le résultat de `python main.py --help` pour inclure les nouveaux flags.
+### CLI help update:
+Update the code block showing `python main.py --help` output to include the new flags.
 
 ---
-## Compte rendu d'implementation
+## Implementation report
 
-### Changements realises
-- `ROADMAP.md` mis a jour pour refleter l'etat reel:
-  - Phase 0 marquee terminee
-  - Phase 1 marquee terminee (progression `rich`, clipboard `-cb/--clipboard` avec OSC 52, formats `--format`)
-  - Phase 3 marquee en cours/partielle avec `--git-diff REF_A REF_B`
-  - Phase 2 repositionnee comme prochaine priorite (`tree-sitter`, multi-langage, `--max-tokens`)
-- `README.md` complete avec les nouvelles fonctionnalites:
-  - formats LLM (`--format text|xml|markdown`) et recommandation XML
-  - copie presse-papiers intelligente (`-cb/--clipboard`) avec support SSH via OSC 52
-  - mode Git diff (`--git-diff REF_A REF_B`) pour usages PR/IA
-  - mention de l'UX console moderne (progress bars, logs colores)
-- section d'aide CLI du `README.md` mise a jour pour inclure:
+### Changes made
+- `ROADMAP.md` updated to reflect actual state:
+  - Phase 0 marked complete
+  - Phase 1 marked complete (`rich` progress, `-cb/--clipboard` with OSC 52, `--format`)
+  - Phase 3 marked in progress/partial with `--git-diff REF_A REF_B`
+  - Phase 2 repositioned as next priority (`tree-sitter`, multi-language, `--max-tokens`)
+- `README.md` extended with new features:
+  - LLM formats (`--format text|xml|markdown`) and XML recommendation
+  - smart clipboard (`-cb/--clipboard`) with SSH via OSC 52
+  - Git diff mode (`--git-diff REF_A REF_B`) for PR/AI use
+  - modern console UX mention (progress bars, colored logs)
+- README CLI help section updated to include:
   - `--format {text,xml,markdown}`
   - `-cb, --clipboard`
   - `--git-diff REF_A REF_B`
 
-### Fichiers modifies
+### Modified files
 - `ROADMAP.md`
 - `README.md`
-- `docs/plans/feature/ux-clipboard-rich/2026_05_17_18:25_phase-1-documentation.plan.md`
+- `docs/plans/2026_05_17_18:25_feature__ux-clipboard-rich_phase-1-documentation.plan.md`
 
 ### Validation
-- Verification de coherence entre documentation et options CLI detectees dans `main.py`
-- Verification linter sur les fichiers modifies: aucune erreur
+- Coherence check between documentation and CLI options detected in `main.py`
+- Linter check on modified files: no errors

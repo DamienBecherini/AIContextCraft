@@ -204,7 +204,7 @@ When no `--output` flag is provided, `output_path` in your YAML config overrides
 
 ```yaml
 # Default output file path.
-output_path: "./build/project_context.txt"
+output_path: "./build/project_context.md"
 
 # --- FILE SELECTION ---
 

@@ -1,68 +1,67 @@
 ---
 name: report-save-prompt-rule
-overview: Ajouter une consigne Cursor toujours active dans AIContextCraft pour demander, en fin d’implémentation, si le compte rendu affiché dans le chat doit être sauvegardé à la fin du plan.
+overview: Add an always-on Cursor rule in AIContextCraft that asks at the end of implementation whether the chat report should be saved to the plan file.
 todos:
   - id: update-aicc-rule
-    content: Étendre la règle plan-publication-policy.mdc dans AIContextCraft avec la consigne de sauvegarde du compte rendu
+    content: Extend plan-publication-policy.mdc in AIContextCraft with report-save guidance
     status: completed
   - id: validate-rule-structure
-    content: Vérifier le frontmatter et la clarté des instructions obligatoires
+    content: Verify frontmatter and clarity of mandatory instructions
     status: completed
   - id: publish-generated-plan
-    content: Publier le plan validé sous docs/plans/<branch-name>/ avec renommage horodaté
+    content: Publish validated plan under docs/plans/ with timestamped rename
     status: in_progress
 isProject: false
 ---
 
-# Ajout de consigne de sauvegarde du compte rendu
+# Add implementation report save prompt
 
-## Objectif
-Mettre en place, dans `AIContextCraft`, une règle Cursor toujours active qui impose en fin d’implémentation :
-- demander explicitement si le compte rendu d’implémentation affiché dans le chat doit être sauvegardé,
-- si l’utilisateur répond oui, l’ajouter à la fin du fichier de plan avec un séparateur clair entre plan et compte rendu.
+## Objective
+Set up an always-on Cursor rule in `AIContextCraft` that requires at the end of implementation:
+- explicitly asking whether the implementation report shown in chat should be saved,
+- if the user answers yes, appending it to the plan file with a clear separator between plan and report.
 
-## Fichiers ciblés
-- Règle à enrichir dans [`/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc`](/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc)
+## Target files
+- Rule to extend: [`/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc`](/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc)
 
-## Plan d’implémentation
-1. **Étendre la règle de `AIContextCraft`**
-   - Conserver la politique actuelle (publication du plan + procédure de tests).
-   - Ajouter une section “Post-implementation report persistence” qui impose :
-     - en fin d’exécution, afficher le compte rendu dans le chat,
-     - demander à l’utilisateur s’il faut le sauvegarder,
-     - en cas de réponse positive, l’append en fin de plan avec séparateur explicite (par ex. `---` puis titre `## Compte rendu d’implémentation`).
+## Implementation plan
+1. **Extend the AIContextCraft rule**
+   - Keep the current policy (plan publication + test procedure).
+   - Add a “Post-implementation report persistence” section that requires:
+     - showing the report in chat at the end of execution,
+     - asking the user whether to save it,
+     - on yes, appending to the plan with an explicit separator (e.g. `---` then `## Implementation report`).
 
-2. **Validation rapide de la règle**
-   - Vérifier le frontmatter `.mdc` (`description`, `alwaysApply: true`) et la lisibilité.
-   - Vérifier que la formulation est non ambiguë sur le flux : question utilisateur obligatoire avant toute sauvegarde du compte rendu.
+2. **Quick rule validation**
+   - Verify `.mdc` frontmatter (`description`, `alwaysApply: true`) and readability.
+   - Verify unambiguous flow: mandatory user question before any report save.
 
-3. **Publication du plan (demandée)**
-   - Ajouter une étape de publication dans l’exécution :
-     - créer `docs/plans/<branch-name>/` si nécessaire,
-     - copier le plan validé,
-     - renommer en `YYYY_MM_DD_HH:MM_<plan-title>.plan.md` (kebab-case ASCII).
+3. **Plan publication (requested)**
+   - Add a publication step during execution:
+     - copy the validated plan into `docs/plans/`,
+     - rename to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` (ASCII kebab-case).
 
-## Résultat attendu
-- Le dépôt AIContextCraft possède une règle Cursor qui force la question de sauvegarde du compte rendu de fin d’implémentation.
-- Si l’utilisateur confirme, le compte rendu est ajouté en fin du plan avec séparation claire.
-- Le plan de travail est également publié sous `docs/plans/<branch-name>/` avec nom horodaté.
+## Expected outcome
+- The AIContextCraft repo has a Cursor rule that forces the end-of-implementation save question.
+- If the user confirms, the report is appended to the plan with clear separation.
+- The work plan is also published under `docs/plans/` with a timestamped name.
 
 ---
 
-## Compte rendu d'implementation
+## Implementation report
 
-Implementation terminee, tous les to-dos du plan sont completes pour AIContextCraft.
+Implementation completed; all plan todos are done for AIContextCraft.
 
-- Regle `plan-publication-policy.mdc` enrichie dans `AIContextCraft` avec la section `Post-Implementation Report Persistence`.
-- Le flux impose maintenant : afficher le compte rendu en chat, demander confirmation, puis sauvegarder dans le plan uniquement si reponse positive.
-- Format d'ajout precise dans la regle : separateur `---`, titre `## Compte rendu d'implementation`, puis contenu du rapport.
+- Rule `plan-publication-policy.mdc` extended in `AIContextCraft` with `Post-Implementation Report Persistence`.
+- Flow now requires: show report in chat, ask for confirmation, save to plan only on yes.
+- Append format specified in the rule: separator `---`, title `## Implementation report`, then report content.
 
-### Fichiers modifies
+### Modified files
 
 - `/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc`
-- `/opt/AIContextCraft/docs/plans/main/2026_05_16_23:38_report-save-prompt-rule.plan.md`
+- `/opt/AIContextCraft/docs/plans/2026_05_16_23:38_main_report-save-prompt-rule.plan.md`
 
 ### Validation
 
-- Frontmatter de la regle verifie (`description`, `alwaysApply: true`).
-- Contenu de la regle verifie pour un usage cible AIContextCraft.
+- Full rule review to confirm existing guidance is preserved.
+- Rule content verified for AIContextCraft-specific usage.

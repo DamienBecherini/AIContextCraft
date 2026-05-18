@@ -1,125 +1,124 @@
 ---
 name: git-diff-mode-aicc
-overview: Ajouter un mode CLI `--git-diff` qui génère un rapport Markdown du diff Git entre deux révisions, sans passer par la concaténation standard, avec gestion d’erreurs et tests automatisés.
+overview: Add a CLI `--git-diff` mode that generates a Markdown report of the Git diff between two revisions, bypassing standard concatenation, with error handling and automated tests.
 todos:
   - id: cli-git-diff-arg
-    content: Ajouter l’argument CLI `--git-diff` avec deux références Git.
+    content: Add CLI `--git-diff` argument with two Git references.
     status: completed
   - id: git-diff-helper
-    content: Implémenter la fonction utilitaire d’exécution `git diff` avec gestion d’erreurs robuste.
+    content: Implement robust `git diff` utility function.
     status: completed
   - id: main-short-circuit
-    content: Ajouter le flux `if args.git_diff` dans `main()` pour court-circuiter tree/concat et générer la sortie Markdown.
+    content: Add `if args.git_diff` flow in `main()` to bypass tree/concat and emit Markdown output.
     status: completed
   - id: tests-git-diff-mode
-    content: Créer les tests unitaires de succès et d’échec pour le nouveau mode Git diff.
+    content: Add unit tests for success and failure of the new Git diff mode.
     status: in_progress
   - id: docs-cli-update
-    content: Documenter `--git-diff` dans le README avec exemple d’usage.
+    content: Document `--git-diff` in README with usage example.
     status: pending
   - id: plan-publication-step
-    content: Inclure l’étape de copie/renommage du plan vers `docs/plans/<branch-name>/` au format horodaté demandé.
+    content: Include plan copy/rename step to docs/plans/ with timestamped format.
     status: pending
 isProject: false
 ---
 
-# Ajouter un mode Git Diff dans AIContextCraft
+# Add Git Diff mode to AIContextCraft
 
-## Objectif
-Implémenter un mode alternatif `--git-diff <REF_A> <REF_B>` qui produit un fichier Markdown contenant le diff Git brut entre deux révisions, puis termine l’exécution sans lancer la logique standard de scan d’arborescence/concaténation.
+## Objective
+Implement an alternate `--git-diff <REF_A> <REF_B>` mode that produces a Markdown file containing the raw Git diff between two revisions, then exits without running standard tree scan/concatenation logic.
 
-## Portée technique
-- **Entrée CLI** : ajouter un argument dédié dans [`/opt/AIContextCraft/aicc.py`](/opt/AIContextCraft/aicc.py).
-- **Récupération du diff** : centraliser l’appel à `git` dans une fonction utilitaire robuste dans [`/opt/AIContextCraft/aicc.py`](/opt/AIContextCraft/aicc.py).
-- **Aiguillage d’exécution** : introduire un chemin court dans `main()` avant la phase de génération d’arbre et lecture des fichiers.
-- **Tests** : couvrir le nouveau mode dans [`/opt/AIContextCraft/tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py).
-- **Documentation utilisateur** : documenter l’option et ses exemples dans [`/opt/AIContextCraft/README.md`](/opt/AIContextCraft/README.md).
+## Technical scope
+- **CLI input**: dedicated argument in [`/opt/AIContextCraft/aicc.py`](/opt/AIContextCraft/aicc.py).
+- **Diff retrieval**: centralize `git` calls in a robust utility in [`/opt/AIContextCraft/aicc.py`](/opt/AIContextCraft/aicc.py).
+- **Execution routing**: early path in `main()` before tree generation and file reading.
+- **Tests**: cover the new mode in [`/opt/AIContextCraft/tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py).
+- **User documentation**: document the option and examples in [`/opt/AIContextCraft/README.md`](/opt/AIContextCraft/README.md).
 
-## Plan d’implémentation
-1. **Étendre l’interface CLI**
-   - Ajouter `parser.add_argument('--git-diff', nargs=2, metavar=('REF_A', 'REF_B'), ...)`.
-   - Définir clairement que ce mode est exclusif au flux de concaténation classique.
+## Implementation plan
+1. **Extend the CLI interface**
+   - Add `parser.add_argument('--git-diff', nargs=2, metavar=('REF_A', 'REF_B'), ...)`.
+   - Clearly define this mode as exclusive from the classic concatenation flow.
 
-2. **Créer une fonction utilitaire Git dédiée**
-   - Ajouter une fonction `get_git_diff(repo_path: Path, ref_a: str, ref_b: str) -> str`.
-   - Comportement attendu :
-     - vérifier que `repo_path` est un dépôt Git (`git rev-parse --is-inside-work-tree`),
-     - exécuter `git diff ref_a ref_b`,
-     - retourner `stdout`.
-   - Gestion d’erreurs explicite :
-     - Git absent (`FileNotFoundError`),
-     - dossier non-Git,
-     - révisions invalides / commande `git diff` en échec.
+2. **Create a dedicated Git utility**
+   - Add `get_git_diff(repo_path: Path, ref_a: str, ref_b: str) -> str`.
+   - Expected behavior:
+     - verify `repo_path` is a Git repo (`git rev-parse --is-inside-work-tree`),
+     - run `git diff ref_a ref_b`,
+     - return `stdout`.
+   - Explicit error handling:
+     - Git missing (`FileNotFoundError`),
+     - non-Git directory,
+     - invalid revisions / failed `git diff`.
 
-3. **Brancher le mode dans `main()`**
-   - Introduire un bloc précoce `if args.git_diff:` après l’initialisation des chemins/config de base.
-   - Dans ce bloc :
-     - lire les deux révisions,
-     - appeler `get_git_diff(...)`,
-     - construire un rendu Markdown dédié (titre + bloc ```diff),
-     - calculer les stats avec `get_file_stats(...)`,
-     - forcer une extension `.md` si la sortie configurée est `.txt`,
-     - écrire le fichier (ou simuler en `--dry-run`),
-     - afficher les messages finaux et sortir proprement.
-   - Garantir qu’aucune logique de tree/concat n’est exécutée dans ce mode.
+3. **Wire the mode in `main()`**
+   - Add an early `if args.git_diff:` block after base path/config initialization.
+   - In that block:
+     - read the two revisions,
+     - call `get_git_diff(...)`,
+     - build dedicated Markdown output (title + ```diff block),
+     - compute stats with `get_file_stats(...)`,
+     - force `.md` extension if configured output is `.txt`,
+     - write the file (or simulate with `--dry-run`),
+     - print final messages and exit cleanly.
+   - Ensure no tree/concat logic runs in this mode.
 
-4. **Définir le format de sortie final**
-   - En-tête similaire au format existant (date, statistiques).
-   - Corps spécifique :
-     - `# Diff Git: <REF_A> -> <REF_B>`
-     - bloc code `diff` contenant le résultat brut de `git diff`.
-   - Cas sans changement : injecter un message lisible (ex. `Aucune différence détectée entre ces révisions.`) dans le bloc de contenu.
+4. **Define final output format**
+   - Header similar to existing format (date, statistics).
+   - Specific body:
+     - `# Git Diff: <REF_A> -> <REF_B>`
+     - `diff` code block with raw `git diff` output.
+   - No changes case: inject a readable message (e.g. `No differences detected between these revisions.`) in the content block.
 
-5. **Ajouter les tests unitaires**
-   - Ajouter au moins un test de succès dans [`/opt/AIContextCraft/tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py) :
-     - créer un mini repo Git temporaire,
-     - faire deux commits,
-     - exécuter `aicc.py --git-diff <sha1> <sha2> ...`,
-     - vérifier code retour, existence fichier, présence du bloc `diff`, et lignes `+/-` attendues.
-   - Ajouter un test d’erreur (référence invalide) :
-     - vérifier `returncode != 0`,
-     - vérifier présence d’un message d’erreur compréhensible dans `stderr`.
+5. **Add unit tests**
+   - At least one success test in [`/opt/AIContextCraft/tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py):
+     - create a temporary mini Git repo,
+     - make two commits,
+     - run `aicc.py --git-diff <sha1> <sha2> ...`,
+     - verify return code, file existence, `diff` block presence, and expected `+/-` lines.
+   - One error test (invalid reference):
+     - verify `returncode != 0`,
+     - verify understandable error message in `stderr`.
 
-6. **Mettre à jour la documentation**
-   - Ajouter `--git-diff` dans la table des options CLI de [`/opt/AIContextCraft/README.md`](/opt/AIContextCraft/README.md).
-   - Ajouter un exemple de commande réel.
-   - Clarifier que ce mode produit un diff global et non une concaténation de fichiers.
+6. **Update documentation**
+   - Add `--git-diff` to the CLI options table in [`/opt/AIContextCraft/README.md`](/opt/AIContextCraft/README.md).
+   - Add a real command example.
+   - Clarify that this mode produces a global diff, not file concatenation.
 
-## Validation prévue
-- Lancer les tests unitaires projet.
-- Vérifier manuellement un run nominal sur un repo Git local et un run en erreur (ref invalide).
-- Vérifier que la sortie est bien en Markdown et que la logique standard est bien court-circuitée.
+## Planned validation
+- Run project unit tests.
+- Manually verify a successful run on a local Git repo and an error run (invalid ref).
+- Verify Markdown output and that standard logic is short-circuited.
 
-## Publication du plan (demandée)
-- Après validation du plan, ajouter une étape d’exécution qui :
-  - crée `docs/plans/<branch-name>/` si nécessaire,
-  - copie le fichier de plan validé,
-  - renomme la copie au format `YYYY_MM_DD_HH:MM_<plan-title>.plan.md` avec `<plan-title>` en kebab-case ASCII.
+## Plan publication (requested)
+- After plan validation, add an execution step that:
+  - copies the validated plan file into `docs/plans/`,
+  - renames the copy to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` with ASCII kebab-case title.
 
 ---
-## Compte rendu d'implementation
+## Implementation report
 
-### Changements realises
-- Ajout de l'argument CLI `--git-diff REF_A REF_B` dans `aicc.py`.
-- Ajout de la fonction `get_git_diff(repo_path, ref_a, ref_b)` avec verification du depot Git et gestion des erreurs (`FileNotFoundError`, refs invalides, dossier non-Git).
-- Ajout d'un chemin court dans `main()` pour le mode Git Diff, sans execution de la logique standard de tree/concat.
-- Generation d'une sortie Markdown dediee :
-  - titre `# Diff Git: <REF_A> -> <REF_B>`
-  - bloc code `diff`
-  - message explicite si aucune difference.
-- Conversion automatique de la sortie `.txt` vers `.md` dans ce mode.
-- Mise a jour de la documentation dans `README.md` (option CLI + exemple).
+### Changes made
+- Added CLI argument `--git-diff REF_A REF_B` in `aicc.py`.
+- Added `get_git_diff(repo_path, ref_a, ref_b)` with Git repo check and error handling (`FileNotFoundError`, invalid refs, non-Git directory).
+- Added early path in `main()` for Git Diff mode without standard tree/concat execution.
+- Dedicated Markdown output generation:
+  - title `# Git Diff: <REF_A> -> <REF_B>`
+  - `diff` code block
+  - explicit message when no differences.
+- Automatic `.txt` to `.md` output conversion in this mode.
+- Updated documentation in `README.md` (CLI option + example).
 
-### Fichiers modifies
+### Modified files
 - `/opt/AIContextCraft/aicc.py`
 - `/opt/AIContextCraft/tests/test_aicc.py`
 - `/opt/AIContextCraft/README.md`
 
-### Validation et tests
-- Tests executes : `pytest /opt/AIContextCraft/tests/test_aicc.py`
-  - collectes : 6
-  - resultat : 6 passed
-  - warnings : 1 `PytestCacheWarning` (permissions cache pytest sous `/opt`)
-- Verification manuelle du mode :
-  - cas nominal : rapport `.md` genere avec diff attendu (`+print('v2')`, etc.)
-  - cas erreur : reference invalide renvoie `exit=1` avec message Git explicite.
+### Validation and tests
+- Tests run: `pytest /opt/AIContextCraft/tests/test_aicc.py`
+  - collected: 6
+  - result: 6 passed
+  - warnings: 1 `PytestCacheWarning` (pytest cache permissions under `/opt`)
+- Manual mode verification:
+  - success case: expected `.md` report with diff (`+print('v2')`, etc.)
+  - error case: invalid reference returns `exit=1` with explicit Git message.

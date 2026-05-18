@@ -1,136 +1,135 @@
 ---
 name: ignore-and-output-strategy
-overview: Aligner le comportement CLI des ignore files avec l’aide/doc, ajouter un skip sélectif par type d’ignore file, et introduire une stratégie de sortie bot-friendly sans casser l’usage humain actuel.
+overview: Align CLI ignore-file behavior with help/docs, add selective skip by ignore type, and introduce a bot-friendly output strategy without breaking current human UX.
 todos:
   - id: create-dedicated-branch
-    content: Créer et utiliser la branche dédiée `feature/ignore-output-strategy` avant toute modification de code.
+    content: Create and use dedicated branch feature/ignore-output-strategy before any code changes.
     status: pending
   - id: align-ignore-contract
-    content: Aligner le contrat --no-ignore avec les 4 ignore files supportés et exposer le contrôle sélectif dans IgnoreManager + CLI.
+    content: Align --no-ignore contract for 4 supported ignore files and expose selective control in IgnoreManager + CLI.
     status: pending
   - id: add-cli-flags
-    content: Implémenter --skip-ignore-files et --ignore-files avec validation stricte et règles de priorité/conflit documentées.
+    content: Implement --skip-ignore-files and --ignore-files with strict validation and documented priority/conflict rules.
     status: pending
   - id: add-output-modes
-    content: Introduire output-format/output-destination/quiet avec séparation stdout-stderr adaptée aux bots.
+    content: Introduce output-format/output-destination/quiet with stdout-stderr separation for bots.
     status: pending
   - id: update-help-readme
-    content: Mettre à jour help argparse et README avec exemples et comportements exacts.
+    content: Update argparse help and README with exact behavior and examples.
     status: pending
   - id: expand-tests
-    content: Étendre les tests unitaires/CLI pour ignore global, skip sélectif, formats de sortie, et non-création de fichiers.
+    content: Extend unit/CLI tests for global ignore, selective skip, output formats, and no file creation.
     status: pending
   - id: run-project-tests
-    content: Exécuter pytest via .aicc_venv et reporter collecte/pass-fail/warnings.
+    content: Run pytest via .aicc_venv and report collected/pass-fail/warnings.
     status: pending
   - id: publish-plan-copy
-    content: Publier une copie du plan validé dans `docs/plans/feature-ignore-output-strategy/` avec nom horodaté kebab-case.
+    content: Publish validated plan copy in docs/plans/ with kebab-case timestamped name.
     status: pending
 isProject: false
 ---
 
-# Finalisation ignore files et stratégie de sortie CLI
+# Finalize ignore files and CLI output strategy
 
-## Objectif
-Rendre le comportement des options d’ignore explicite et cohérent (`--no-ignore` global + skip sélectif), puis fiabiliser l’intégration bot/CI avec une sortie machine stable (JSON opt-in), tout en conservant l’UX humaine actuelle par défaut.
+## Objective
+Make ignore option behavior explicit and consistent (`--no-ignore` global + selective skip), then harden bot/CI integration with stable machine output (opt-in JSON) while keeping current human UX as default.
 
-## Périmètre
-- **Ignore files**: conserver `--no-ignore` comme désactivation globale de tous les ignore files supportés.
-- **Skip sélectif**: ajouter un mécanisme pratique pour désactiver seulement certains types d’ignore files.
-- **Sortie console**: conserver la sortie humaine par défaut, ajouter un mode structuré machine.
-- **Documentation et aide**: aligner le texte utilisateur avec le comportement réel.
-- **Tests**: couvrir parsing/validation CLI, comportement ignore, et formats de sortie.
+## Scope
+- **Ignore files**: keep `--no-ignore` as global disable for all supported ignore files.
+- **Selective skip**: add a practical way to disable only certain ignore file types.
+- **Console output**: keep human output by default, add structured machine mode.
+- **Documentation and help**: align user-facing text with actual behavior.
+- **Tests**: cover CLI parsing/validation, ignore behavior, and output formats.
 
-## Changements proposés
+## Proposed changes
 
-### 0) Créer la branche dédiée
-- Créer puis utiliser la branche: `feature/ignore-output-strategy`.
-- Exécuter toute l’implémentation sur cette branche pour isoler le scope.
+### 0) Create dedicated branch
+- Create and use branch: `feature/ignore-output-strategy`.
+- Run all implementation on this branch to isolate scope.
 
-### 1) Clarifier et consolider la logique ignore
-- Confirmer contractuellement que `--no-ignore` désactive la couche ignore files complète (`.gitignore`, `.dockerignore`, `.cursorignore`, `.npmignore`) tout en gardant les règles de sécurité.
-- Étendre la configuration de `IgnoreManager` pour accepter une liste de types d’ignore files désactivés sélectivement.
-- Fichiers cibles:
+### 1) Clarify and consolidate ignore logic
+- Contractually confirm `--no-ignore` disables the full ignore-files layer (`.gitignore`, `.dockerignore`, `.cursorignore`, `.npmignore`) while keeping security rules.
+- Extend `IgnoreManager` configuration to accept a list of selectively disabled ignore file types.
+- Target files:
   - [`/opt/AIContextCraft/craft/ignore_manager.py`](/opt/AIContextCraft/craft/ignore_manager.py)
   - [`/opt/AIContextCraft/main.py`](/opt/AIContextCraft/main.py)
 
-### 2) Introduire une UX CLI de skip sélectif (les 2 syntaxes)
-- Ajouter `--skip-ignore-files=gitignore,dockerignore,cursorignore,npmignore` (syntaxe recommandée).
-- Ajouter `--ignore-files=...` (syntaxe complémentaire), avec règles de validation/conflit claires.
-- Règles d’interaction:
-  - `--no-ignore` a priorité globale.
-  - si `--no-ignore` + flags sélectifs: warning explicite ou erreur (décision unique documentée et testée).
-  - validation stricte des valeurs (typo => erreur d’usage claire).
-- Fichier cible:
+### 2) Introduce selective skip CLI UX (both syntaxes)
+- Add `--skip-ignore-files=gitignore,dockerignore,cursorignore,npmignore` (recommended syntax).
+- Add `--ignore-files=...` (complementary syntax) with clear validation/conflict rules.
+- Interaction rules:
+  - `--no-ignore` has global priority.
+  - if `--no-ignore` + selective flags: explicit warning or error (single documented and tested decision).
+  - strict value validation (typo => clear usage error).
+- Target file:
   - [`/opt/AIContextCraft/main.py`](/opt/AIContextCraft/main.py)
 
-### 3) Stratégie de sortie recommandée (humain par défaut, bot opt-in)
-- Ajouter `--output-format human|json` (défaut: `human`).
-- En `json`: résultat structuré stable sur `stdout`; logs/messages diagnostics sur `stderr`.
-- Ajouter `--quiet` (inverse pratique de `verbose`) pour réduire les sorties non essentielles.
-- Introduire `--output-destination file|stdout|both|none` pour contrôler la création de fichier de sortie.
-- Conserver des codes de sortie simples et robustes (`0` succès, `2` usage/arguments, `1` erreur runtime).
-- Fichiers cibles:
+### 3) Recommended output strategy (human default, bot opt-in)
+- Add `--output-format human|json` (default: `human`).
+- In `json`: stable structured result on `stdout`; logs/diagnostics on `stderr`.
+- Add `--quiet` (practical inverse of `verbose`) to reduce non-essential output.
+- Introduce `--output-destination file|stdout|both|none` to control output file creation.
+- Keep simple robust exit codes (`0` success, `2` usage/arguments, `1` runtime error).
+- Target files:
   - [`/opt/AIContextCraft/main.py`](/opt/AIContextCraft/main.py)
-  - (si présent) module de rendu/export résultat utilisé par `main.py`.
+  - (if present) result render/export module used by `main.py`.
 
-### 4) Mettre à jour aide CLI et documentation
-- Aligner les help strings sur le comportement réel multi-ignore files.
-- Documenter la nouvelle matrice d’options ignore (`--no-ignore`, `--skip-ignore-files`, `--ignore-files`).
-- Documenter les modes de sortie (`human/json`, destination, `--quiet`) et exemples CI/bot.
-- Fichier cible principal:
+### 4) Update CLI help and documentation
+- Align help strings with real multi-ignore-file behavior.
+- Document ignore option matrix (`--no-ignore`, `--skip-ignore-files`, `--ignore-files`).
+- Document output modes (`human/json`, destination, `--quiet`) and CI/bot examples.
+- Main target:
   - [`/opt/AIContextCraft/README.md`](/opt/AIContextCraft/README.md)
 
-### 5) Couverture de tests
-- Étendre tests unitaires et/ou CLI pour:
-  - `--no-ignore` global sur tous les types d’ignore files.
-  - skip sélectif par type.
-  - conflits/validation des nouveaux flags.
-  - format de sortie `json` stable et sans bruit parasite sur `stdout`.
-  - non-création de fichier quand `--output-destination=stdout|none`.
-- Fichiers cibles:
+### 5) Test coverage
+- Extend unit and/or CLI tests for:
+  - global `--no-ignore` on all ignore file types.
+  - selective skip by type.
+  - new flag conflicts/validation.
+  - stable `json` output with clean `stdout`.
+  - no file creation when `--output-destination=stdout|none`.
+- Target files:
   - [`/opt/AIContextCraft/tests/test_ignore_manager.py`](/opt/AIContextCraft/tests/test_ignore_manager.py)
   - [`/opt/AIContextCraft/tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py)
 
 ## Validation
-- Exécuter les tests via l’environnement local du projet (`.aicc_venv`) selon la procédure projet (`pytest`).
-- Vérifier manuellement quelques commandes de référence:
-  - cas humain par défaut,
-  - cas bot JSON (`stdout` propre),
-  - cas ignore global et skip sélectif.
+- Run tests via project local environment (`.aicc_venv`) per project procedure (`pytest`).
+- Manually verify reference commands:
+  - default human case,
+  - bot JSON case (clean `stdout`),
+  - global ignore and selective skip cases.
 
-## Risques et garde-fous
-- **Risque UX**: trop d’options proches sur les ignore files.
-  - Garde-fou: une syntaxe recommandée (`--skip-ignore-files`) + messages d’erreur pédagogiques.
-- **Risque compatibilité**: scripts existants dépendants des sorties console.
-  - Garde-fou: `human` reste défaut; `json` strictement opt-in.
-- **Risque ambiguïté `stdout`**: mélange logs/résultat.
-  - Garde-fou: contrat fort `stdout=data`, `stderr=diagnostic` en mode `json`.
+## Risks and safeguards
+- **UX risk**: too many similar ignore options.
+  - Safeguard: one recommended syntax (`--skip-ignore-files`) + clear error messages.
+- **Compatibility risk**: existing scripts depend on console output.
+  - Safeguard: `human` remains default; `json` strictly opt-in.
+- **`stdout` ambiguity risk**: mixed logs/result.
+  - Safeguard: strong contract `stdout=data`, `stderr=diagnostic` in `json` mode.
 
-## Publication du plan (demandée)
-- Créer `docs/plans/feature-ignore-output-strategy/` si nécessaire.
-- Copier ce plan validé dans ce dossier.
-- Renommer la copie au format `YYYY_MM_DD_HH:MM_<plan-title>.plan.md` avec `<plan-title>` en kebab-case ASCII.
+## Plan publication (requested)
+- Copy this validated plan into `docs/plans/`.
+- Rename copy to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` with ASCII kebab-case title.
 
 ---
-## Compte rendu d'implementation
+## Implementation report
 
-### Changements réalisés
-- Branche dédiée créée et utilisée: `feature/ignore-output-strategy` (dans `AIContextCraft`).
-- Alignement du contrat `--no-ignore`: désactivation globale des ignore files hiérarchiques (`.gitignore`, `.dockerignore`, `.cursorignore`, `.npmignore`) avec maintien des règles de sécurité.
-- Ajout du skip sélectif des ignore files:
-  - `--skip-ignore-files=...` (désactive seulement les types listés)
-  - `--ignore-files=...` (garde seulement les types listés, alias inverse)
-  - validation stricte des types et incompatibilité des deux flags ensemble.
-- Ajout d'un mode sortie bot-friendly:
+### Changes made
+- Dedicated branch created and used: `feature/ignore-output-strategy` (in `AIContextCraft`).
+- `--no-ignore` contract aligned: global disable of hierarchical ignore files (`.gitignore`, `.dockerignore`, `.cursorignore`, `.npmignore`) with security rules kept.
+- Selective ignore skip added:
+  - `--skip-ignore-files=...` (disable only listed types)
+  - `--ignore-files=...` (keep only listed types, inverse alias)
+  - strict type validation and mutual exclusion of both flags.
+- Bot-friendly output mode added:
   - `--output-format human|json`
   - `--output-destination file|stdout|both|none`
-  - `--quiet` (logs console minimaux).
-- En mode `json`, émission d'un rapport structuré sur `stdout` et contrôle propre des sorties.
-- Mise à jour de l’aide/documentation pour refléter les comportements réels et nouveaux flags.
-- Ajout/extension des tests pour couvrir ignore global, skip sélectif et sortie JSON bot-friendly.
+  - `--quiet` (minimal console logs).
+- In `json` mode, structured report on `stdout` with clean output control.
+- Help/documentation updated for real behavior and new flags.
+- Tests added/extended for global ignore, selective skip, and JSON bot output.
 
-### Fichiers modifiés
+### Modified files
 - `main.py`
 - `craft/ignore_manager.py`
 - `craft/utils.py`
@@ -138,11 +137,11 @@ Rendre le comportement des options d’ignore explicite et cohérent (`--no-igno
 - `tests/test_ignore_manager.py`
 - `README.md`
 
-### Validation et tests
-- Commande exécutée: `cd /opt/AIContextCraft && .aicc_venv/bin/python -m pytest tests`
-- Tests collectés: **33**
-- Résultat: **33 passed**
-- Warnings: **96** (dépréciations `pathspec` sur `gitwildmatch`, sans échec)
+### Validation and tests
+- Command run: `cd /opt/AIContextCraft && .aicc_venv/bin/python -m pytest tests`
+- Tests collected: **33**
+- Result: **33 passed**
+- Warnings: **96** (`pathspec` `gitwildmatch` deprecations, no failures)
 
-### Remarques
-- Correction effectuée après incident de contexte: branche créée initialement au mauvais dépôt, nettoyée dans `wp-manager`, puis recréée correctement dans `AIContextCraft`.
+### Notes
+- Fix after context incident: branch initially created in wrong repo, cleaned in `wp-manager`, then recreated correctly in `AIContextCraft`.

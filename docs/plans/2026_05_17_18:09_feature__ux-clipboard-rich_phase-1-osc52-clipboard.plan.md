@@ -1,72 +1,71 @@
 ---
 name: phase-1-osc52-clipboard
-overview: Ajouter un fallback OSC 52 dans la copie presse-papiers pour supporter les exécutions SSH/headless sans casser le flux console existant.
+overview: Add OSC 52 fallback for clipboard copy to support SSH/headless runs without breaking the existing console flow.
 todos:
   - id: update-clipboard-function
-    content: Mettre à jour `maybe_copy_to_clipboard` dans `main.py` pour fallback de `pyperclip` vers OSC 52.
+    content: Update maybe_copy_to_clipboard in main.py for pyperclip to OSC 52 fallback.
     status: completed
   - id: add-safe-logging-path
-    content: Conserver les messages utilisateur `rich` et la journalisation warning uniquement quand OSC 52 échoue.
+    content: Keep Rich user messages and warning log only when OSC 52 fails.
     status: completed
   - id: validate-behavior
-    content: Valider manuellement les 3 scénarios (clipboard local OK, fallback OSC 52, échec OSC 52).
+    content: Manually validate 3 scenarios (local clipboard OK, OSC 52 fallback, OSC 52 failure).
     status: completed
   - id: publish-plan-copy
-    content: Copier le plan validé dans `docs/plans/<branch-name>/` en `YYYY_MM_DD_HH:MM_phase-1-osc52-clipboard.plan.md`.
+    content: Copy validated plan to docs/plans/ as YYYY_MM_DD_HH:MM_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md.
     status: in_progress
   - id: save-report
-    content: Demander si le compte-rendu d’implémentation doit être sauvegardé dans le plan, puis agir selon la réponse.
+    content: Ask whether implementation report should be saved to plan, then act on answer.
     status: pending
 isProject: false
 ---
 
-# Plan d’implémentation — Support OSC 52 (SSH/headless)
+# Implementation plan — OSC 52 support (SSH/headless)
 
-## Objectif
-Rendre `--clipboard` fiable en environnement distant/headless en conservant d’abord la copie locale via `pyperclip`, puis en basculant vers OSC 52 si le backend système est indisponible.
+## Objective
+Make `--clipboard` reliable in remote/headless environments by keeping local `pyperclip` copy first, then falling back to OSC 52 when the system backend is unavailable.
 
-## Fichiers concernés
+## Files involved
 - [main.py](/opt/AIContextCraft/main.py)
-- [docs/plans/<branch-name>/YYYY_MM_DD_HH:MM_phase-1-osc52-clipboard.plan.md](/opt/AIContextCraft/docs/plans)
+- [docs/plans/2026_05_17_18:09_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md](/opt/AIContextCraft/docs/plans/2026_05_17_18:09_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md)
 
-## Changements à réaliser
-1. Dans [main.py](/opt/AIContextCraft/main.py), compléter les imports avec `base64` (et garder `sys` déjà présent).
-2. Modifier `maybe_copy_to_clipboard(clipboard_enabled, content, console)` pour appliquer ce flux:
-   - **Étape A (locale)**: tenter `pyperclip.copy(content)` puis afficher le succès local actuel.
-   - **Étape B (fallback OSC 52)**: uniquement si exception `pyperclip.PyperclipException` ou `pyperclip.PyperclipWindowsException`:
-     - encoder `content` en base64 UTF-8,
-     - écrire `\x1b]52;c;{encoded}\x07` sur `stdout`,
-     - forcer `flush()`,
-     - afficher `[green]Contenu envoyé au presse-papiers via SSH (OSC 52).[/green]`.
-   - **Étape C (erreur fallback)**: encapsuler l’étape B dans un `try/except Exception` pour conserver un warning propre en log, sans interrompre le programme.
-3. Préserver l’ergonomie console:
-   - ne pas altérer les messages `rich` existants hors du périmètre presse-papiers,
-   - garder une exécution non bloquante si clipboard local et OSC 52 échouent.
+## Changes to implement
+1. In [main.py](/opt/AIContextCraft/main.py), add `base64` import (keep existing `sys`).
+2. Modify `maybe_copy_to_clipboard(clipboard_enabled, content, console)` with this flow:
+   - **Step A (local)**: try `pyperclip.copy(content)` then show current local success message.
+   - **Step B (OSC 52 fallback)**: only on `pyperclip.PyperclipException` or `pyperclip.PyperclipWindowsException`:
+     - encode `content` as UTF-8 base64,
+     - write `\x1b]52;c;{encoded}\x07` to `stdout`,
+     - call `flush()`,
+     - show `[green]Content sent to clipboard via SSH (OSC 52).[/green]`.
+   - **Step C (fallback error)**: wrap step B in `try/except Exception` for a clean warning log without stopping the program.
+3. Preserve console ergonomics:
+   - do not alter existing Rich messages outside clipboard scope,
+   - keep non-blocking execution if both local clipboard and OSC 52 fail.
 
-## Vérification
-1. **Cas local GUI**: vérifier que le message “Contenu copié dans le presse-papiers.” apparaît et que le contenu est collable.
-2. **Cas SSH/headless sans backend clipboard**: simuler/observer une `PyperclipException`, vérifier l’émission OSC 52 et le message de succès OSC 52.
-3. **Cas erreur OSC 52**: forcer une erreur sur l’écriture stdout pour confirmer qu’un warning est loggé sans crash.
+## Verification
+1. **Local GUI case**: verify “Content copied to clipboard.” appears and content is pasteable.
+2. **SSH/headless without clipboard backend**: simulate/observe `PyperclipException`, verify OSC 52 emission and success message.
+3. **OSC 52 error case**: force stdout write error and confirm warning is logged without crash.
 
-## Publication du plan (demandée)
-Après validation du plan, ajouter une étape d’exécution qui:
-1. crée `docs/plans/<branch-name>/` si nécessaire,
-2. copie le plan validé dans ce dossier,
-3. renomme le fichier en `YYYY_MM_DD_HH:MM_phase-1-osc52-clipboard.plan.md`.
+## Plan publication (requested)
+After plan validation, add an execution step that:
+1. copies the validated plan into `docs/plans/`,
+2. renames to `YYYY_MM_DD_HH:MM_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md`.
 
 ---
-## Compte rendu d'implementation
+## Implementation report
 
-- Changement principal: ajout d'un fallback OSC 52 dans `maybe_copy_to_clipboard` après échec de `pyperclip`.
-- Comportement:
-  - tentative locale conservée via `pyperclip.copy(content)`,
-  - fallback OSC 52 sur exceptions `PyperclipException`/`PyperclipWindowsException`,
-  - message utilisateur Rich de succès OSC 52,
-  - warning non bloquant uniquement si l'étape OSC 52 échoue.
-- Fichiers modifiés:
+- Main change: OSC 52 fallback in `maybe_copy_to_clipboard` after `pyperclip` failure.
+- Behavior:
+  - local attempt kept via `pyperclip.copy(content)`,
+  - OSC 52 fallback on `PyperclipException`/`PyperclipWindowsException`,
+  - Rich success message for OSC 52,
+  - non-blocking warning only if OSC 52 step fails.
+- Modified files:
   - `main.py`
-  - `docs/plans/feature/ux-clipboard-rich/2026_05_17_18:09_phase-1-osc52-clipboard.plan.md` (append du compte-rendu)
+  - `docs/plans/2026_05_17_18:09_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md` (report appended)
 - Validation:
-  - lint: aucun problème sur `main.py`,
+  - lint: no issues on `main.py`,
   - tests: `21 passed`, `54 warnings`,
-  - collecte: `21` tests.
+  - collected: `21` tests.

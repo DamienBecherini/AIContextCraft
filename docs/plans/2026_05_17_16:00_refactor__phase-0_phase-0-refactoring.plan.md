@@ -1,77 +1,75 @@
 ---
 name: phase-0-refactoring
-overview: Refactoring iso-fonctionnel de aicc.py (~509 lignes) vers le package craft/ et main.py, avec shim de compatibilité aicc.py, nettoyage des imports morts, mise à jour README, et non-régression sur les 6 tests pytest existants.
+overview: Behavior-preserving refactor of aicc.py (~509 lines) into the craft/ package and main.py, with aicc.py compatibility shim, dead import cleanup, README update, and no regression on the 6 existing pytest tests.
 todos:
   - id: publish-plan
-    content: Enregistrer ce plan dans docs/plans/refactor/phase-0/2026_05_17_16:00_phase-0-refactoring.plan.md
+    content: Save this plan to docs/plans/2026_05_17_16:00_refactor__phase-0_phase-0-refactoring.plan.md
     status: completed
   - id: create-craft-structure
-    content: Créer craft/ avec __init__.py
+    content: Create craft/ with __init__.py
     status: completed
   - id: extract-utils-and-git
-    content: Créer craft/utils.py (TIKTOKEN, logging, stats) et craft/git_manager.py (get_git_diff)
+    content: Create craft/utils.py (TIKTOKEN, logging, stats) and craft/git_manager.py (get_git_diff)
     status: completed
   - id: extract-file-processor
-    content: Créer craft/file_processor.py (strip_comments, get_python_headers)
+    content: Create craft/file_processor.py (strip_comments, get_python_headers)
     status: completed
   - id: extract-filter-and-tree
-    content: Créer craft/filter_manager.py et craft/tree_generator.py
+    content: Create craft/filter_manager.py and craft/tree_generator.py
     status: completed
   - id: create-main-orchestrator
-    content: Créer main.py depuis aicc.py avec imports craft/* (orchestrateur seul)
+    content: Create main.py from aicc.py with craft/* imports (orchestrator only)
     status: completed
   - id: create-aicc-shim
-    content: Conserver aicc.py comme point d'entrée mince déléguant à main.main()
+    content: Keep aicc.py as thin entry point delegating to main.main()
     status: completed
   - id: clean-unused-imports
-    content: Supprimer les imports morts (io, tokenize) dans tous les modules concernés
+    content: Remove dead imports (io, tokenize) in all affected modules
     status: completed
   - id: update-tests-readme
-    content: Mettre à jour tests/test_aicc.py, tests/setup_tests.sh et README.md
+    content: Update tests/test_aicc.py, tests/setup_tests.sh and README.md
     status: completed
   - id: run-regression-tests
-    content: Lancer pytest (6 tests) et vérifier que aicc.py et main.py se comportent identiquement
+    content: Run pytest (6 tests) and verify aicc.py and main.py behave identically
     status: completed
   - id: save-report
-    content: Demander si le compte-rendu d'implémentation doit être sauvegardé dans le plan
+    content: Ask whether the implementation report should be saved to the plan
     status: completed
 isProject: true
 ---
 
-# Phase 0 — Refactoring modulaire (fondation)
+# Phase 0 — Modular refactoring (foundation)
 
-## Objectif
+## Objective
 
-Passer d'un script monolithique ([`aicc.py`](/opt/AIContextCraft/aicc.py), ~509 lignes) à une architecture modulaire dans le package [`craft/`](/opt/AIContextCraft/craft/), **sans modifier le comportement fonctionnel** (refactoring iso-fonctionnel).
+Move from a monolithic script ([`aicc.py`](/opt/AIContextCraft/aicc.py), ~509 lines) to a modular architecture in the [`craft/`](/opt/AIContextCraft/craft/) package, **without changing functional behavior** (behavior-preserving refactor).
 
-Contraintes de cette phase :
+Constraints for this phase:
 
-- Préserver toutes les options CLI existantes, dont `--git-diff` (rapport Markdown du diff Git entre deux révisions).
-- Préserver les optimisations `os.walk` avec élagage des dossiers exclus (arborescence et parcours des fichiers).
-- Maintenir **deux points d'entrée** équivalents : `main.py` (canonique) et `aicc.py` (compatibilité).
-- Nettoyer les imports inutilisés (`io`, `tokenize` aujourd'hui morts dans `aicc.py`).
-- Faire passer les **6 tests** de [`tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py).
+- Preserve all existing CLI options, including `--git-diff` (Markdown Git diff report between two revisions).
+- Preserve `os.walk` optimizations with pruning of excluded directories (tree and file traversal).
+- Maintain **two equivalent entry points**: `main.py` (canonical) and `aicc.py` (compatibility).
+- Clean unused imports (`io`, `tokenize` currently dead in `aicc.py`).
+- Keep all **6 tests** in [`tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py) passing.
 
-Branche cible : `refactor/phase-0`.
-
----
-
-## Emplacement du plan
-
-Ce plan vit dans le dépôt à :
-
-[`docs/plans/refactor/phase-0/2026_05_17_16:00_phase-0-refactoring.plan.md`](/opt/AIContextCraft/docs/plans/refactor/phase-0/2026_05_17_16:00_phase-0-refactoring.plan.md)
-
-(horodatage ajusté au moment de la première sauvegarde si nécessaire)
+Target branch: `refactor/phase-0`.
 
 ---
 
-## Architecture cible
+## Plan location
+
+This plan lives in the repo at:
+
+[`docs/plans/2026_05_17_16:00_refactor__phase-0_phase-0-refactoring.plan.md`](/opt/AIContextCraft/docs/plans/2026_05_17_16:00_refactor__phase-0_phase-0-refactoring.plan.md)
+
+---
+
+## Target architecture
 
 ```text
 /opt/AIContextCraft/
-├── main.py                 # Point d'entrée canonique (orchestrateur)
-├── aicc.py                 # Point d'entrée de compatibilité (délègue à main)
+├── main.py                 # Canonical entry point (orchestrator)
+├── aicc.py                 # Compatibility entry point (delegates to main)
 ├── config.yaml
 ├── craft/
 │   ├── __init__.py
@@ -79,11 +77,11 @@ Ce plan vit dans le dépôt à :
 │   ├── git_manager.py      # get_git_diff
 │   ├── file_processor.py   # strip_comments, get_python_headers
 │   ├── filter_manager.py   # normalize_glob_patterns
-│   └── tree_generator.py   # generate_tree
-├── README.md               # documente main.py et aicc.py
+│   └── tree_generator.py # generate_tree
+├── README.md               # documents main.py and aicc.py
 └── tests/
     ├── test_aicc.py        # subprocess via main.py
-    └── setup_tests.sh      # idem
+    └── setup_tests.sh      # same
 ```
 
 ```mermaid
@@ -103,190 +101,190 @@ flowchart TB
 
 ---
 
-## Répartition des responsabilités
+## Responsibility split
 
 ### [`craft/utils.py`](/opt/AIContextCraft/craft/utils.py)
 
-- `TIKTOKEN_AVAILABLE` + import optionnel `tiktoken`
+- `TIKTOKEN_AVAILABLE` + optional `tiktoken` import
 - `setup_logging(log_file_path, verbose)`
 - `format_bytes(size)`
 - `get_file_stats(content_str, encoding='utf-8')`
 
 ### [`craft/git_manager.py`](/opt/AIContextCraft/craft/git_manager.py)
 
-- `get_git_diff(repo_path, ref_a, ref_b)` — vérifie le dépôt Git, exécute `git diff`, remonte les erreurs (`RuntimeError`) avec messages inchangés.
+- `get_git_diff(repo_path, ref_a, ref_b)` — verifies Git repo, runs `git diff`, raises errors (`RuntimeError`) with unchanged messages.
 
 ### [`craft/file_processor.py`](/opt/AIContextCraft/craft/file_processor.py)
 
-- `strip_comments_from_code(content, file_path)` — AST Python, shell/Dockerfile.
-- `get_python_headers(content, full_body_filters_patterns)` — signatures + docstrings partielles.
+- `strip_comments_from_code(content, file_path)` — Python AST, shell/Dockerfile.
+- `get_python_headers(content, full_body_filters_patterns)` — signatures + partial docstrings.
 
-Imports : `ast`, `pathlib.Path`, `fnmatch`, `logging` uniquement.
+Imports: `ast`, `pathlib.Path`, `fnmatch`, `logging` only.
 
 ### [`craft/filter_manager.py`](/opt/AIContextCraft/craft/filter_manager.py)
 
-- `normalize_glob_patterns(patterns)` — normalisation `\` → `/` pour matching cross-platform.
+- `normalize_glob_patterns(patterns)` — `\` → `/` normalization for cross-platform matching.
 
 ### [`craft/tree_generator.py`](/opt/AIContextCraft/craft/tree_generator.py)
 
-- `generate_tree(directory, include_spec, exclude_spec, show_sizes=False)` — arborescence avec élagage `os.walk`.
+- `generate_tree(directory, include_spec, exclude_spec, show_sizes=False)` — tree with `os.walk` pruning.
 
 ### [`main.py`](/opt/AIContextCraft/main.py)
 
-Orchestrateur unique. Contient `main()` et :
+Single orchestrator. Contains `main()` and:
 
-- parsing `argparse` (toutes les options actuelles) ;
-- chargement / fusion YAML + messages d'erreur YAML (aide backslash) ;
-- branche `--git-diff` (conversion `.txt` → `.md`, stats, dry-run) ;
-- assemblage filtres (`clean_patterns`, `pathspec`, `.gitignore`) ;
-- boucle `os.walk` pour lister les fichiers ;
-- lecture, transformation (`strip-comments`, `headers-only`), écriture sortie.
+- `argparse` parsing (all current options);
+- YAML load/merge + YAML error messages (backslash help);
+- `--git-diff` branch (`.txt` → `.md`, stats, dry-run);
+- filter assembly (`clean_patterns`, `pathspec`, `.gitignore`);
+- `os.walk` loop to list files;
+- read, transform (`strip-comments`, `headers-only`), write output.
 
-**Ne pas déplacer** dans cette phase : logique de configuration complète, assemblage avancé des filtres (voir section « Reporté »).
+**Do not move** in this phase: full configuration logic, advanced filter assembly (see “Deferred”).
 
-### [`aicc.py`](/opt/AIContextCraft/aicc.py) — compatibilité
+### [`aicc.py`](/opt/AIContextCraft/aicc.py) — compatibility
 
-Fichier minimal (~5 lignes), sans logique métier :
+Minimal file (~5 lines), no business logic:
 
 ```python
-"""Point d'entrée de compatibilité. Délègue à main.main()."""
+"""Compatibility entry point. Delegates to main.main()."""
 from main import main
 
 if __name__ == "__main__":
     main()
 ```
 
-Les scripts, habitudes et documentation existants qui invoquent `python aicc.py` continuent de fonctionner.
+Existing scripts, habits, and docs that invoke `python aicc.py` keep working.
 
 ---
 
-## Étapes d'implémentation
+## Implementation steps
 
-### 1. Publier le plan
+### 1. Publish the plan
 
-Créer [`docs/plans/refactor/phase-0/`](/opt/AIContextCraft/docs/plans/refactor/phase-0/) et y copier ce fichier.
+Copy this file into `docs/plans/` with the timestamped name above.
 
-### 2. Créer `craft/`
+### 2. Create `craft/`
 
-- `craft/__init__.py` (package vide ou exports explicites).
+- `craft/__init__.py` (empty package or explicit exports).
 
-### 3. Extraire les modules (ordre feuilles → racine)
+### 3. Extract modules (leaves → root)
 
 `utils` → `git_manager` → `file_processor` → `filter_manager` → `tree_generator`.
 
-Chaque module n'importe que ce qu'il utilise réellement.
+Each module imports only what it actually uses.
 
-### 4. Créer `main.py`
+### 4. Create `main.py`
 
-- Migrer `main()` depuis `aicc.py` en remplaçant les fonctions extraites par `from craft... import ...`.
-- Conserver ligne à ligne : messages, flux, codes de sortie, format des fichiers générés.
+- Migrate `main()` from `aicc.py`, replacing extracted functions with `from craft... import ...`.
+- Preserve line-by-line: messages, flow, exit codes, generated file formats.
 
-### 5. Créer le shim `aicc.py`
+### 5. Create the `aicc.py` shim
 
-- Remplacer le monolithe actuel par le délégué vers `main.main()` (voir snippet ci-dessus).
+- Replace the current monolith with delegation to `main.main()` (see snippet above).
 
-### 6. Nettoyer les imports inutiles
+### 6. Clean unused imports
 
-- Supprimer `io` et `tokenize` (jamais utilisés dans le monolithe actuel).
-- Vérifier chaque fichier `craft/*.py` et `main.py` : aucun import orphelin après extraction.
-- Ne pas introduire de nouvelles dépendances.
+- Remove `io` and `tokenize` (never used in the current monolith).
+- Check each `craft/*.py` and `main.py`: no orphan imports after extraction.
+- Do not add new dependencies.
 
-### 7. Mettre à jour README
+### 7. Update README
 
-Dans [`README.md`](/opt/AIContextCraft/README.md) :
+In [`README.md`](/opt/AIContextCraft/README.md):
 
-- Présenter **`python main.py`** comme commande principale.
-- Indiquer que **`python aicc.py`** reste supporté (alias de compatibilité, même comportement).
-- Mettre à jour tous les exemples (sections Usage, Example Workflow, tableau CLI si des exemples y figurent).
+- Present **`python main.py`** as the primary command.
+- State that **`python aicc.py`** remains supported (compatibility alias, same behavior).
+- Update all examples (Usage, Example Workflow, CLI table if applicable).
 
-### 8. Mettre à jour les tests et scripts de test
+### 8. Update tests and test scripts
 
-| Fichier | Changement |
+| File | Change |
 |---|---|
-| [`tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py) | `AICC_SCRIPT = PROJECT_ROOT / 'main.py'` (entrée canonique pour pytest) |
+| [`tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py) | `AICC_SCRIPT = PROJECT_ROOT / 'main.py'` (canonical entry for pytest) |
 | [`tests/setup_tests.sh`](/opt/AIContextCraft/tests/setup_tests.sh) | `AICC_SCRIPT="$PROJECT_ROOT/main.py"` |
 
-**Ne pas modifier** : `tests/test_projects/**` (golden files).
+**Do not modify**: `tests/test_projects/**` (golden files).
 
-**Vérification manuelle complémentaire** (hors pytest) : lancer une commande identique via `python aicc.py` et `python main.py` sur `basic_project` ; sorties identiques.
+**Supplementary manual check** (outside pytest): run an identical command via `python aicc.py` and `python main.py` on `basic_project`; outputs must match.
 
-### 9. Non-régression
+### 9. Non-regression
 
 ```bash
 cd /opt/AIContextCraft
 .aicc_venv/bin/python -m pytest tests/test_aicc.py -v
 ```
 
-Critère : **6/6** tests passent.
+Criterion: **6/6** tests pass.
 
-### 10. Post-implémentation
+### 10. Post-implementation
 
-1. Compte rendu dans le chat (fichiers modifiés, résultats tests).
-2. Demander si le compte rendu est appendé au plan (`---` + `## Compte rendu d'implementation`).
-3. Proposer un message de commit Conventional Commits.
+1. Implementation report in chat (modified files, test results).
+2. Ask whether the report should be appended to the plan (`---` + `## Implementation report`).
+3. Propose a Conventional Commits message.
 
 ---
 
-## Règles strictes
+## Strict rules
 
-- **Zéro nouvelle fonctionnalité** : pas de tqdm, presse-papiers, profils YAML, etc.
-- **Zéro changement de sortie** : mêmes fichiers générés, en-têtes, diffs, logs, codes retour.
-- **Imports minimaux** par module après nettoyage.
-- **Deux entrées, un comportement** : `aicc.py` et `main.py` doivent produire des résultats identiques.
+- **Zero new features**: no tqdm, clipboard, YAML profiles, etc.
+- **Zero output change**: same generated files, headers, diffs, logs, return codes.
+- **Minimal imports** per module after cleanup.
+- **Two entries, one behavior**: `aicc.py` and `main.py` must produce identical results.
 
 ---
 
 ## Validation
 
-| Contrôle | Méthode |
+| Check | Method |
 |---|---|
-| Tests automatisés | `pytest tests/test_aicc.py` → 6 tests OK |
-| Compatibilité `aicc.py` | smoke test manuel ou script one-liner identique sur les deux entrées |
-| README | exemples cohérents avec `main.py` + mention `aicc.py` |
-| Imports | pas de `io` / `tokenize` résiduels |
+| Automated tests | `pytest tests/test_aicc.py` → 6 tests OK |
+| `aicc.py` compatibility | manual smoke test or one-liner on both entries |
+| README | examples consistent with `main.py` + `aicc.py` mention |
+| Imports | no residual `io` / `tokenize` |
 
 ---
 
-## Reporté aux phases ultérieures
+## Deferred to later phases
 
-Éléments volontairement **hors scope** de la Phase 0. Le refactoring actuel prépare le terrain sans les implémenter.
+Items intentionally **out of scope** for Phase 0. This refactor prepares the ground without implementing them.
 
-### `craft/config_manager.py` — gestion centralisée de la configuration
+### `craft/config_manager.py` — centralized configuration
 
-**Fonctionnalité visée :** module dédié au chargement du YAML (`config.yaml` ou `-c`), fusion avec les valeurs par défaut, validation de schéma, et messages d'erreur structurés (dont l'aide sur les backslashes YAML).
+**Target capability:** dedicated module for YAML loading (`config.yaml` or `-c`), merge with defaults, schema validation, and structured error messages (including backslash help).
 
-**Pourquoi reporté :** aujourd'hui, toute cette logique vit dans `main()` (~40 lignes). L'extraire maintenant multiplierait les risques de régression sur des cas déjà couverts par les tests (config invalide, patterns spéciaux) sans apporter de valeur utilisateur immédiate. La Phase 0 se concentre sur le découpage du code *métier* (fichiers, filtres, arbre, git). Le `config_manager` viendra quand la base modulaire sera stable.
+**Why deferred:** this logic currently lives in `main()` (~40 lines). Extracting it now would multiply regression risk on cases already covered by tests (invalid config, special patterns) without immediate user value. Phase 0 focuses on splitting *business* code (files, filters, tree, git). `config_manager` comes when the modular base is stable.
 
-### Extension de `craft/filter_manager.py` — assemblage complet des filtres
+### Extended `craft/filter_manager.py` — full filter assembly
 
-**Fonctionnalité visée :** centraliser `clean_patterns`, fusion `common_filters` / `project_only_filters` / `tree_only_filters`, intégration `.gitignore`, création des `PathSpec`, et exclusion automatique du fichier de sortie.
+**Target capability:** centralize `clean_patterns`, merge `common_filters` / `project_only_filters` / `tree_only_filters`, `.gitignore` integration, `PathSpec` creation, and automatic exclusion of the output file.
 
-**Pourquoi reporté :** seule `normalize_glob_patterns` est isolée en Phase 0 car c'est une unité cohérente et testée indirectement. Le reste est fortement couplé au flux `main()` et aux specs `pathspec` ; le déplacer dans le même refactoring augmenterait la surface de changement sans test unitaire dédié encore.
+**Why deferred:** only `normalize_glob_patterns` is isolated in Phase 0 as a coherent, indirectly tested unit. The rest is tightly coupled to `main()` and `pathspec`; moving it in the same refactor would increase change surface without dedicated unit tests yet.
 
-### Tests unitaires par module
+### Per-module unit tests
 
-**Fonctionnalité visée :** tests ciblés sur `file_processor`, `tree_generator`, etc., en complément des tests E2E subprocess actuels.
+**Target capability:** focused tests on `file_processor`, `tree_generator`, etc., in addition to current subprocess E2E tests.
 
-**Pourquoi reporté :** la priorité Phase 0 est la non-régression sur les 6 tests d'intégration existants. Les tests unitaires deviennent pertinents une fois les modules extraits et stabilisés.
+**Why deferred:** Phase 0 priority is non-regression on the 6 existing integration tests. Unit tests become relevant once modules are extracted and stable.
 
-### Fonctionnalités produit (ROADMAP Phase 1+)
+### Product features (ROADMAP Phase 1+)
 
-Reportées car ce sont des **nouvelles capacités**, pas du refactoring :
+Deferred because they are **new capabilities**, not refactoring:
 
-| Item | Description courte | Phase suggérée |
+| Item | Short description | Suggested phase |
 |---|---|---|
-| Barre de progression (`tqdm`) | Retour visuel pendant la concaténation | Phase 1 (UX) |
-| `--clipboard` | Copie sortie dans le presse-papiers | Phase 1 (UX) |
-| Encodages robustes (`chardet`) | Remplacer `errors='ignore'` silencieux | Phase 1 |
-| `strip-comments` multi-langages | JS, TS, HTML, etc. | Phase 2 |
-| Profils de configuration | `--profile frontend` | Phase 2 |
-| Fractionnement `--max-tokens` | Plusieurs fichiers de sortie | Phase 2 |
-| `--git-diff` sélectif (fichiers modifiés) | Diff + filtrage des fichiers impactés (distinct du mode rapport global actuel) | Phase 3 |
-| Priorisation intelligente des tokens | Heuristiques sous contrainte de taille | Phase 3 |
+| Progress bar (`tqdm`) | Visual feedback during concatenation | Phase 1 (UX) |
+| `--clipboard` | Copy output to clipboard | Phase 1 (UX) |
+| Robust encodings (`chardet`) | Replace silent `errors='ignore'` | Phase 1 |
+| Multi-language `strip-comments` | JS, TS, HTML, etc. | Phase 2 |
+| Configuration profiles | `--profile frontend` | Phase 2 |
+| `--max-tokens` splitting | Multiple output files | Phase 2 |
+| Selective `--git-diff` (changed files) | Diff + filter impacted files (distinct from current global report mode) | Phase 3 |
+| Smart token prioritization | Heuristics under size constraints | Phase 3 |
 
 ---
 
-## Proposition de commit (indicative)
+## Suggested commit (indicative)
 
 ```
 refactor(craft): modularize aicc into craft package and main.py
@@ -295,32 +293,33 @@ Extract utils, git, file processing, filters, and tree generation.
 Keep aicc.py as compatibility shim. Clean dead imports. Update README
 and tests. Preserve --git-diff and all CLI behavior.
 
-Plan: docs/plans/refactor/phase-0/2026_05_17_16:00_phase-0-refactoring.plan.md
+Plan: docs/plans/2026_05_17_16:00_refactor__phase-0_phase-0-refactoring.plan.md
 ```
 
 
 ---
-## Compte rendu d'implementation
-### Architecture livrée
-- Package `craft/` : `__init__.py`, `utils.py`, `git_manager.py`, `file_processor.py`, `filter_manager.py`, `tree_generator.py`
-- `main.py` : orchestrateur (argparse, YAML, filtres, `os.walk`, sortie)
-- `aicc.py` : shim de compatibilité déléguant à `main.main()`
-### Fichiers modifiés / créés
-| Fichier | Action |
+## Implementation report
+### Delivered architecture
+- Package `craft/`: `__init__.py`, `utils.py`, `git_manager.py`, `file_processor.py`, `filter_manager.py`, `tree_generator.py`
+- `main.py`: orchestrator (argparse, YAML, filters, `os.walk`, output)
+- `aicc.py`: compatibility shim delegating to `main.main()`
+### Modified / created files
+| File | Action |
 |---------|--------|
-| `craft/*.py` | Créés (6 modules) |
-| `main.py` | Créé |
-| `aicc.py` | Remplacé par shim (~5 lignes) |
+| `craft/*.py` | Created (6 modules) |
+| `main.py` | Created |
+| `aicc.py` | Replaced with shim (~5 lines) |
 | `tests/test_aicc.py` | `AICC_SCRIPT` → `main.py` |
 | `tests/setup_tests.sh` | `AICC_SCRIPT` → `main.py` |
-| `README.md` | `main.py` principal + note alias `aicc.py` |
-| `docs/plans/refactor/phase-0/2026_05_17_16:00_phase-0-refactoring.plan.md` | Plan publié |
-Imports morts `io` et `tokenize` supprimés (non présents dans les modules finaux).
+| `README.md` | `main.py` primary + `aicc.py` alias note |
+| `docs/plans/2026_05_17_16:00_refactor__phase-0_phase-0-refactoring.plan.md` | Plan published |
+Dead imports `io` and `tokenize` removed (not present in final modules).
 ### Validation
-- **pytest** : 6/6 passés (`tests/test_aicc.py`, ~1,37 s, sans warnings)
-- **Smoke test** : sorties identiques entre `python main.py` et `python aicc.py` sur `basic_project` (`diff` OK)
-### Commande de vérification
+- **pytest**: 6/6 passed (`tests/test_aicc.py`, ~1.37 s, no warnings)
+- **Smoke test**: identical output between `python main.py` and `python aicc.py` on `basic_project` (`diff` OK)
+### Verification command
 ```bash
 cd /opt/AIContextCraft
 .aicc_venv/bin/python -m pytest tests/test_aicc.py -v
 
+```

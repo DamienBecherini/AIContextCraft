@@ -1,133 +1,132 @@
 ---
 name: llm-output-formats
-overview: Introduire des formats de sortie `text`, `xml` et `markdown` via un module dédié, tout en préservant strictement le comportement historique par défaut et en couvrant les cas spéciaux CLI/tests.
+overview: Introduce `text`, `xml`, and `markdown` output formats via a dedicated module while strictly preserving default historical behavior and covering special CLI/test cases.
 todos:
   - id: cli-config-format
-    content: "Ajouter `--format` et `output_format: text` avec résolution CLI > config."
+    content: "Add `--format` and `output_format: text` with CLI > config resolution."
     status: completed
   - id: formatter-module
-    content: Créer `craft/formatter.py` avec renderers text/xml/markdown et API de rendu unique.
+    content: Create `craft/formatter.py` with text/xml/markdown renderers and a single render API.
     status: completed
   - id: main-pipeline-refactor
-    content: Refactoriser `main.py` pour collecter des données fichiers et déléguer le rendu au formatter.
+    content: Refactor `main.py` to collect file data and delegate rendering to the formatter.
     status: completed
   - id: special-modes-policy
-    content: Stabiliser `--tree-only` multi-format et conserver `--git-diff` sur son flux Markdown dédié.
+    content: Stabilize multi-format `--tree-only` and keep `--git-diff` on its dedicated Markdown flow.
     status: completed
   - id: tests-formats
-    content: Ajouter les tests xml/markdown/tree-only et un test d’échappement XML.
+    content: Add xml/markdown/tree-only tests and an XML escaping test.
     status: in_progress
   - id: python-test-procedure
-    content: Valider via `.aicc_venv` et reporter collected/pass-fail/warnings.
+    content: Validate via `.aicc_venv` and report collected/pass-fail/warnings.
     status: pending
   - id: publish-plan-copy
-    content: Publier une copie horodatée du plan dans `docs/plans/<branch-name>/` avec titre kebab-case.
+    content: Publish a timestamped plan copy in docs/plans/ with kebab-case title.
     status: pending
 isProject: false
 ---
 
-# Phase 1 - Formats de sortie LLM (Text/XML/Markdown)
+# Phase 1 - LLM output formats (Text/XML/Markdown)
 
-## Objectif
-Ajouter un moteur de rendu multi-format pour la sortie de concaténation dans AIContextCraft, avec `text` comme défaut strictement rétrocompatible, puis `xml` et `markdown` comme formats optimisés LLM.
+## Objective
+Add a multi-format rendering engine for concatenation output in AIContextCraft, with `text` as the strictly backward-compatible default, then `xml` and `markdown` as LLM-optimized formats.
 
-## Constat actuel (base de travail)
-- La génération finale est centralisée dans [`main.py`](/opt/AIContextCraft/main.py) avec une concaténation texte en dur (arbre + extensions + sections `--- FICHIER:`).
-- Le mode `--git-diff` suit un flux dédié et produit déjà un rapport Markdown autonome.
-- Les tests CLI sont regroupés dans [`tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py).
-- Aucune abstraction de formatage n’existe encore dans `craft/`.
+## Current state (baseline)
+- Final generation is centralized in [`main.py`](/opt/AIContextCraft/main.py) with hard-coded text concatenation (tree + extensions + `--- FILE:` sections).
+- `--git-diff` mode follows a dedicated flow and already produces a standalone Markdown report.
+- CLI tests are grouped in [`tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py).
+- No formatting abstraction exists yet in `craft/`.
 
-## Stratégie d’implémentation
+## Implementation strategy
 
-### 1) Étendre la configuration/CLI sans casser l’existant
-- Dans [`main.py`](/opt/AIContextCraft/main.py), ajouter l’argument `--format` avec `choices=['text', 'xml', 'markdown']`.
-- Ajouter `output_format: 'text'` dans `DEFAULT_CONFIG` et lire la valeur config/CLI avec priorité CLI.
-- Garder la sortie identique à aujourd’hui quand `format == 'text'` (y compris séparateurs, titres, structure globale).
+### 1) Extend configuration/CLI without breaking existing behavior
+- In [`main.py`](/opt/AIContextCraft/main.py), add `--format` with `choices=['text', 'xml', 'markdown']`.
+- Add `output_format: 'text'` to `DEFAULT_CONFIG` and read config/CLI with CLI priority.
+- Keep output identical to today when `format == 'text'` (separators, titles, overall structure).
 
-### 2) Créer un module de rendu dédié
-- Créer [`craft/formatter.py`](/opt/AIContextCraft/craft/formatter.py) avec une API unique, par exemple:
+### 2) Create a dedicated rendering module
+- Create [`craft/formatter.py`](/opt/AIContextCraft/craft/formatter.py) with a single API, e.g.:
   - `build_output(format_type, intro_header, project_tree, extension_summary, files_data, tree_only=False)`
-- Standardiser `files_data` comme liste de tuples `(relative_path, content)` (ou structure équivalente).
-- Implémenter trois renderers:
-  - `text`: reproduction stricte du rendu actuel.
-  - `xml`: structure `<repository>`, `<directory_structure>`, `<files>`, `<file path="...">`.
-  - `markdown`: sections `# Project Context`, `## Directory Structure`, `## Files`, blocs de code avec language hint par extension (fallback `text`).
-- Échapper correctement le contenu XML (`&`, `<`, `>`) pour garantir un document valide.
+- Standardize `files_data` as a list of `(relative_path, content)` tuples (or equivalent structure).
+- Implement three renderers:
+  - `text`: strict reproduction of current output.
+  - `xml`: `<repository>`, `<directory_structure>`, `<files>`, `<file path="...">` structure.
+  - `markdown`: `# Project Context`, `## Directory Structure`, `## Files`, code blocks with language hint by extension (fallback `text`).
+- Escape XML content correctly (`&`, `<`, `>`) for valid documents.
 
-### 3) Refactoriser le pipeline de génération dans `main.py`
-- Remplacer `all_files_content` (chaînes déjà formatées) par une collecte de données brutes par fichier.
-- Après lecture/transformations (`--strip-comments`, `--headers-only`), déléguer le rendu final à `craft.formatter`.
-- Conserver l’en-tête global existant (phrase descriptive, date, statistiques), puis injecter le corps formaté.
+### 3) Refactor the generation pipeline in `main.py`
+- Replace `all_files_content` (pre-formatted strings) with raw per-file data collection.
+- After read/transformations (`--strip-comments`, `--headers-only`), delegate final rendering to `craft.formatter`.
+- Keep the existing global header (descriptive sentence, date, statistics), then inject the formatted body.
 
-### 4) Définir clairement les modes spéciaux
+### 4) Define special modes clearly
 - `--tree-only`:
-  - `text`: garder le rendu actuel arbre + extensions.
-  - `xml`: produire `<repository><directory_structure>...</directory_structure></repository>` sans `<files>`.
-  - `markdown`: produire seulement la section contexte/arborescence, sans section fichiers.
+  - `text`: keep current tree + extensions output.
+  - `xml`: produce `<repository><directory_structure>...</directory_structure></repository>` without `<files>`.
+  - `markdown`: produce only context/tree section, no files section.
 - `--git-diff`:
-  - Conserver le flux actuel inchangé (rapport Markdown dédié) pour éviter une régression fonctionnelle.
-  - Ignorer `--format` dans ce mode avec un log explicite, afin d’avoir un comportement déterministe.
+  - Keep current flow unchanged (dedicated Markdown report) to avoid functional regression.
+  - Ignore `--format` in this mode with an explicit log for deterministic behavior.
 
-### 5) Compléter la couverture de tests
-- Étendre [`tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py) avec:
-  - un test `--format xml` (présence de `<repository>`, `<directory_structure>`, `<files>`, `<file path="...">`).
-  - un test `--format markdown` (présence de `# Project Context`, `## Directory Structure`, `## Files`).
-  - un test `--tree-only --format xml|markdown` (absence de section fichiers).
-  - un test de rétrocompatibilité `text` (comparaison robuste existante conservée).
-- Ajouter si utile un cas d’échappement XML sur contenu incluant `<tag>&value`.
+### 5) Complete test coverage
+- Extend [`tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py) with:
+  - `--format xml` test (presence of `<repository>`, `<directory_structure>`, `<files>`, `<file path="...">`).
+  - `--format markdown` test (presence of `# Project Context`, `## Directory Structure`, `## Files`).
+  - `--tree-only --format xml|markdown` test (no files section).
+  - `text` backward-compatibility test (existing robust comparison preserved).
+- Add XML escaping test on content including `<tag>&value` if useful.
 
-### 6) Validation et exécution des tests Python (procédure projet)
-- Utiliser l’environnement local `.aicc_venv`:
-  - créer le venv si absent, installer les dépendances via `requirements.txt`.
-  - exécuter `pytest` avec le Python du venv (suite ciblée puis complète si nécessaire).
-- Reporter dans le compte-rendu:
-  - nombre de tests collectés,
-  - statut pass/fail,
-  - warnings éventuels.
+### 6) Validation and Python test execution (project procedure)
+- Use local `.aicc_venv`:
+  - create venv if missing, install dependencies via `requirements.txt`.
+  - run `pytest` with venv Python (targeted then full suite if needed).
+- Report in the implementation summary:
+  - number of tests collected,
+  - pass/fail status,
+  - warnings if any.
 
-### 7) Publication du plan (demandée)
-- Déterminer le nom de branche courant.
-- Créer `docs/plans/<branch-name>/` si nécessaire.
-- Copier le plan validé dans ce dossier et le renommer au format:
-  - `YYYY_MM_DD_HH:MM_<plan-title>.plan.md`
-- Normaliser `<plan-title>` en kebab-case ASCII.
+### 7) Plan publication (requested)
+- Determine current branch name.
+- Copy validated plan into `docs/plans/`.
+- Rename to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md`.
+- Normalize `<plan-title>` to ASCII kebab-case.
 
-## Critères d’acceptation
-- `--format` accepte `text|xml|markdown`.
-- Sans `--format`, la sortie est strictement identique au comportement historique.
-- `--tree-only` et `--git-diff` ont un comportement explicite, stable et testé.
-- Les nouveaux tests de format passent, sans casser les tests existants.
-- Le plan est publié dans `docs/plans/<branch-name>/` avec le nom horodaté attendu.
+## Acceptance criteria
+- `--format` accepts `text|xml|markdown`.
+- Without `--format`, output is strictly identical to historical behavior.
+- `--tree-only` and `--git-diff` have explicit, stable, tested behavior.
+- New format tests pass without breaking existing tests.
+- Plan is published in `docs/plans/` with the expected timestamped name.
 
 ---
-## Compte rendu d'implementation
+## Implementation report
 
-### Changements réalisés
-- Ajout de `--format {text,xml,markdown}` dans `main.py`.
-- Ajout de `output_format: "text"` dans `config.yaml` et dans `DEFAULT_CONFIG` pour conserver la rétrocompatibilité.
-- Création de `craft/formatter.py` avec une API unique `build_output(...)` et trois renderers:
-  - `text`: rendu historique inchangé
-  - `xml`: structure `<repository>`, `<directory_structure>`, `<files>`, `<file path=\"...\">`
-  - `markdown`: sections `# Project Context`, `## Directory Structure`, `## Files`, avec détection de langage pour les blocs de code
-- Refactorisation du pipeline de sortie de `main.py`:
-  - collecte des fichiers en données brutes `(relative_path, content)`
-  - délégation du rendu final au formatter
-  - gestion homogène de `--tree-only` pour tous les formats
-- Mode `--git-diff` conservé en flux Markdown dédié, avec log explicite si `--format` est fourni.
+### Changes made
+- Added `--format {text,xml,markdown}` in `main.py`.
+- Added `output_format: "text"` in `config.yaml` and `DEFAULT_CONFIG` for backward compatibility.
+- Created `craft/formatter.py` with single API `build_output(...)` and three renderers:
+  - `text`: unchanged historical output
+  - `xml`: `<repository>`, `<directory_structure>`, `<files>`, `<file path=\"...\">`
+  - `markdown`: `# Project Context`, `## Directory Structure`, `## Files`, with language detection for code blocks
+- Refactored `main.py` output pipeline:
+  - collect files as raw `(relative_path, content)` data
+  - delegate final rendering to formatter
+  - handle `--tree-only` consistently for all formats
+- `--git-diff` mode kept on dedicated Markdown flow, with explicit log if `--format` is provided.
 
-### Fichiers modifiés
+### Modified files
 - `main.py`
 - `config.yaml`
-- `craft/formatter.py` (nouveau)
+- `craft/formatter.py` (new)
 - `tests/test_aicc.py`
-- `docs/plans/feature/llm-formats/2026_05_17_17:29_llm-output-formats.plan.md` (ajout du compte rendu)
+- `docs/plans/2026_05_17_17:29_feature__llm-formats_llm-output-formats.plan.md` (report appended)
 
 ### Validation / tests
-- Environnement utilisé: `.aicc_venv` (Python local du projet).
-- Commande exécutée: `.aicc_venv/bin/python -m pytest tests`
-- Résultat:
-  - tests collectés: 21
-  - statut: 21 passed
+- Environment used: `.aicc_venv` (project local Python).
+- Command: `.aicc_venv/bin/python -m pytest tests`
+- Result:
+  - tests collected: 21
+  - status: 21 passed
   - warnings: 54
-- Détail warnings:
-  - warnings de dépréciation `pathspec` sur `gitwildmatch` (pas de régression introduite par cette phase).
+- Warning detail:
+  - `pathspec` deprecation warnings on `gitwildmatch` (not introduced by this phase).

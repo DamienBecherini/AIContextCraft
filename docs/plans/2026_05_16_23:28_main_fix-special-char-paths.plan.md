@@ -1,87 +1,86 @@
 ---
 name: fix special-char paths
-overview: Corriger la gestion des chemins avec caractères spéciaux et séparateurs Windows dans AIContextCraft, de la lecture YAML jusqu’au matching des patterns, avec tests de non-régression et documentation de configuration.
+overview: Fix handling of paths with special characters and Windows separators in AIContextCraft, from YAML loading through pattern matching, with regression tests and configuration documentation.
 todos:
   - id: improve-yaml-error
-    content: Améliorer le message d’erreur yaml.YAMLError avec conseils concrets sur backslashes/quotes
+    content: Improve yaml.YAMLError message with concrete guidance on backslashes/quotes
     status: completed
   - id: normalize-patterns
-    content: Implémenter la normalisation des patterns (\\ vers /) avant PathSpec
+    content: Implement pattern normalization (\ to /) before PathSpec
     status: completed
   - id: add-special-char-tests
-    content: Ajouter tests et fixtures Unicode + chemins Windows + erreur YAML guidée
+    content: Add tests and fixtures for Unicode + Windows paths + guided YAML error
     status: completed
   - id: update-readme-config
-    content: Documenter les bonnes pratiques YAML/patterns pour caractères spéciaux
+    content: Document YAML/pattern best practices for special characters
     status: completed
   - id: publish-plan-aicontextcraft
-    content: Publier la copie du plan validé dans docs/plans/<branch-name>/ du projet AIContextCraft
+    content: Publish validated plan copy in AIContextCraft docs/plans/ with timestamped name
     status: in_progress
 isProject: false
 ---
 
-# Correction des chemins spéciaux (AIContextCraft)
+# Special-character path fix (AIContextCraft)
 
-## Objectif
-Permettre l’usage fiable de noms de dossiers/fichiers contenant des caractères Unicode (emoji, accents, etc.) et de séparateurs Windows (`\\`) dans `include_patterns`, sans erreur de parsing ni mismatch de filtrage.
+## Objective
+Enable reliable use of folder/file names containing Unicode characters (emoji, accents, etc.) and Windows separators (`\`) in `include_patterns`, without parsing errors or filtering mismatches.
 
-## Constat actuel
-- Le chargement de configuration repose sur `yaml.safe_load` dans [`/opt/AIContextCraft/aicc.py`](/opt/AIContextCraft/aicc.py).
-- Une valeur comme `"🚀 Projets\🏰 Proxmox Homelab"` dans un scalaire YAML double-quoted échoue avant toute logique applicative (`unknown escape character`).
-- Le moteur de matching compare des chemins normalisés en `/` côté scan, mais les patterns utilisateur ne sont pas normalisés symétriquement.
+## Current state
+- Configuration loading relies on `yaml.safe_load` in [`/opt/AIContextCraft/aicc.py`](/opt/AIContextCraft/aicc.py).
+- A value like `"🚀 Projets\🏰 Proxmox Homelab"` in a double-quoted YAML scalar fails before any application logic (`unknown escape character`).
+- The matching engine compares paths normalized to `/` during scanning, but user patterns are not normalized symmetrically.
 
-## Plan d’implémentation
-1. **Sécuriser le chargement YAML avec message guidé**
-   - Dans [`/opt/AIContextCraft/aicc.py`](/opt/AIContextCraft/aicc.py), enrichir le bloc `except yaml.YAMLError` pour détecter les erreurs d’escape liées aux backslashes et afficher une aide claire :
-     - préférer les slashs `/` dans les patterns,
-     - ou utiliser des guillemets simples YAML,
-     - ou doubler les backslashes (`\\\\`) si nécessaire.
-   - Garder la sortie en erreur explicite (pas de fallback silencieux ambigu).
+## Implementation plan
+1. **Harden YAML loading with guided messages**
+   - In [`/opt/AIContextCraft/aicc.py`](/opt/AIContextCraft/aicc.py), enrich the `except yaml.YAMLError` block to detect escape errors related to backslashes and show clear guidance:
+     - prefer `/` in patterns,
+     - or use YAML single quotes,
+     - or double backslashes (`\\\\`) if needed.
+   - Keep explicit error output (no ambiguous silent fallback).
 
-2. **Normaliser les patterns de chemins utilisateur**
-   - Ajouter une normalisation centralisée des patterns dans [`/opt/AIContextCraft/aicc.py`](/opt/AIContextCraft/aicc.py) avant création des `PathSpec` :
-     - transformer les séparateurs Windows `\\` en `/`,
-     - conserver les caractères Unicode tels quels,
-     - appliquer la normalisation à `include_patterns`, `common_filters`, `project_only_filters`, `tree_only_filters`.
-   - Vérifier que la logique de matching existante (`relative_path.replace('\\', '/')`) reste cohérente avec cette normalisation.
+2. **Normalize user path patterns**
+   - Add centralized pattern normalization in [`/opt/AIContextCraft/aicc.py`](/opt/AIContextCraft/aicc.py) before creating `PathSpec`:
+     - convert Windows `\` separators to `/`,
+     - preserve Unicode characters as-is,
+     - apply normalization to `include_patterns`, `common_filters`, `project_only_filters`, `tree_only_filters`.
+   - Verify existing matching logic (`relative_path.replace('\\', '/')`) stays consistent with this normalization.
 
-3. **Ajouter des tests de non-régression ciblés**
-   - Étendre [`/opt/AIContextCraft/tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py) avec des cas dédiés :
-     - config valide avec pattern contenant emoji + slash `/` => inclusion attendue,
-     - config avec chemins style Windows (`\\`) => comportement identique après normalisation,
-     - config YAML invalide (double-quoted + escape invalide) => message d’erreur guidé attendu.
-   - Ajouter les fixtures de projet minimales sous [`/opt/AIContextCraft/tests/test_projects`](/opt/AIContextCraft/tests/test_projects) avec dossiers/fichiers Unicode.
+3. **Add targeted regression tests**
+   - Extend [`/opt/AIContextCraft/tests/test_aicc.py`](/opt/AIContextCraft/tests/test_aicc.py) with dedicated cases:
+     - valid config with emoji + `/` pattern => expected inclusion,
+     - Windows-style paths (`\\`) => identical behavior after normalization,
+     - invalid YAML (double-quoted + invalid escape) => expected guided error message.
+   - Add minimal project fixtures under [`/opt/AIContextCraft/tests/test_projects`](/opt/AIContextCraft/tests/test_projects) with Unicode folders/files.
 
-4. **Documenter la syntaxe recommandée**
-   - Mettre à jour la section config de [`/opt/AIContextCraft/README.md`](/opt/AIContextCraft/README.md) avec exemples sûrs pour chemins spéciaux :
-     - usage recommandé des `/`,
-     - exemples avec caractères Unicode,
-     - rappel sur YAML (`'...'` ou `\\\\` en double-quoted).
+4. **Document recommended syntax**
+   - Update the config section of [`/opt/AIContextCraft/README.md`](/opt/AIContextCraft/README.md) with safe examples for special paths:
+     - recommended `/` usage,
+     - Unicode examples,
+     - YAML reminder (`'...'` or `\\\\` in double-quoted strings).
 
-5. **Valider et publier le plan dans AIContextCraft**
-   - Exécuter les tests concernés.
-   - Créer (si absent) `docs/plans/<branch-name>/` dans le projet `AIContextCraft`.
-   - Copier le plan validé dans ce dossier en le renommant au format `YYYY_MM_DD_HH:MM_<plan-title>.plan.md` (titre en kebab-case ASCII).
+5. **Validate and publish the plan in AIContextCraft**
+   - Run relevant tests.
+   - Copy the validated plan into `docs/plans/` with format `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` (title in ASCII kebab-case).
 
-## Résultat attendu
-- Plus de blocage pour les noms Unicode dès lors que la config YAML est correctement formée.
-- Les patterns saisis avec séparateurs Windows fonctionnent de façon prévisible via normalisation.
-- Les utilisateurs ont une documentation claire pour éviter les erreurs YAML liées aux backslashes.
+## Expected outcome
+- No more blocking for Unicode names when YAML config is well formed.
+- Patterns entered with Windows separators work predictably via normalization.
+- Users have clear documentation to avoid YAML backslash-related errors.
 
 ---
 
-## Compte rendu d'implementation
+## Implementation report
 
-Implementation terminee, tous les to-dos du plan sont completes.
+Implementation completed; all plan todos are done.
 
-- Correctif applique dans AIContextCraft pour gerer les chemins speciaux/Unicode et les separateurs Windows dans les patterns.
-- Message d'erreur YAML ameliore pour guider clairement les cas `\` invalides en double quotes.
-- Normalisation centralisee des patterns (`\` -> `/`) avant creation des PathSpec.
-- Tests de non-regression ajoutes (Unicode, backslashes, erreur YAML guidee).
-- Documentation mise a jour avec exemples recommandes.
-- Copie du plan publiee dans AIContextCraft a `docs/plans/main/2026_05_16_23:28_fix-special-char-paths.plan.md`.
+- Fix applied in AIContextCraft for special/Unicode paths and Windows separators in patterns.
+- Improved YAML error message to clearly guide invalid `\` cases in double quotes.
+- Centralized pattern normalization (`\` -> `/`) before PathSpec creation.
+- Regression tests added (Unicode, backslashes, guided YAML error).
+- Documentation updated with recommended examples.
+- Plan copy published at `docs/plans/2026_05_16_23:28_main_fix-special-char-paths.plan.md`.
 
-### Fichiers modifies
+### Modified files
 
 - `aicc.py`
 - `tests/test_aicc.py`
@@ -90,11 +89,11 @@ Implementation terminee, tous les to-dos du plan sont completes.
 - `tests/test_projects/special_chars_project/config_backslash.yaml`
 - `tests/test_projects/special_chars_project/🚀 Projets/🏰 Proxmox Homelab/context.txt`
 - `tests/test_projects/special_chars_project/other/ignored.txt`
-- `docs/plans/main/2026_05_16_23:28_fix-special-char-paths.plan.md`
+- `docs/plans/2026_05_16_23:28_main_fix-special-char-paths.plan.md`
 
 ### Validation
 
-- Lints verifies sur fichiers edites: aucune erreur.
-- Tests executes:
+- Lints checked on edited files: no errors.
+- Tests executed:
   - `cd /opt/AIContextCraft && .venv/bin/python -m pytest -q --confcutdir=/opt/AIContextCraft tests/test_aicc.py`
-- Resultat: `4 passed`
+- Result: `4 passed`

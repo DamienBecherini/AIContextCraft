@@ -1,108 +1,108 @@
 ---
 name: config-ignore-console-visibility
-overview: Ajouter une sortie console explicite sur la config réellement utilisée et sur les fichiers d’ignore détectés/utilisés, en étendant le support aux ignore files demandés (.dockerignore, .cursorignore, .npmignore).
+overview: Add explicit console output for the config actually used and detected/applied ignore files, extending support to .dockerignore, .cursorignore, .npmignore.
 todos:
   - id: status-config-console
-    content: Ajouter les statuts de résolution/usage de config dans main.py
+    content: Add config resolution/usage status in main.py
     status: completed
   - id: multi-ignore-support
-    content: Étendre IgnoreManager pour .gitignore, .dockerignore, .cursorignore, .npmignore
+    content: Extend IgnoreManager for .gitignore, .dockerignore, .cursorignore, .npmignore
     status: completed
   - id: ignore-discovery-usage-report
-    content: Exposer les ignore files détectés/utilisés (chemins relatifs + statut)
+    content: Expose detected/used ignore files (relative paths + status)
     status: completed
   - id: final-console-listing
-    content: Afficher un listing trié et lisible des ignore files en fin d’exécution
+    content: Display sorted readable ignore file listing at end of run
     status: completed
   - id: validate-cli-and-tests
-    content: Valider via commandes CLI et exécution pytest dans .aicc_venv
+    content: Validate via CLI commands and pytest in .aicc_venv
     status: completed
 isProject: false
 ---
 
-# Plan d’implémentation : visibilité config + ignores
+# Implementation plan: config + ignore visibility
 
-## Objectif
-Rendre la sortie CLI explicite sur :
-- le mode de configuration utilisé (fichier explicite, auto-détecté, ou fallback defaults),
-- les fichiers d’ignore trouvés et appliqués,
-- un listing en chemins relatifs des ignore files détectés et leur statut d’utilisation.
+## Objective
+Make CLI output explicit about:
+- configuration mode used (explicit file, auto-detected, or default fallback),
+- ignore files found and applied,
+- a relative-path listing of detected ignore files and their usage status.
 
-## Périmètre technique
-- Orchestration CLI : [`/opt/AIContextCraft/main.py`](/opt/AIContextCraft/main.py)
-- Gestion des ignores : [`/opt/AIContextCraft/craft/ignore_manager.py`](/opt/AIContextCraft/craft/ignore_manager.py)
-- (si nécessaire) normalisation/utilitaires logging : [`/opt/AIContextCraft/craft/utils.py`](/opt/AIContextCraft/craft/utils.py)
+## Technical scope
+- CLI orchestration: [`/opt/AIContextCraft/main.py`](/opt/AIContextCraft/main.py)
+- Ignore handling: [`/opt/AIContextCraft/craft/ignore_manager.py`](/opt/AIContextCraft/craft/ignore_manager.py)
+- (if needed) logging/utilities: [`/opt/AIContextCraft/craft/utils.py`](/opt/AIContextCraft/craft/utils.py)
 
-## Étapes
-1. **Formaliser les statuts affichés pour la config** dans `main.py` :
-   - `config explicitement demandée et utilisée`,
-   - `config auto-détectée et utilisée`,
-   - `fichier config demandé mais introuvable -> fallback defaults`,
-   - `aucune config trouvée -> fallback defaults`.
-2. **Étendre `IgnoreManager`** pour supporter plusieurs fichiers d’ignore :
+## Steps
+1. **Formalize displayed config statuses** in `main.py`:
+   - `explicit config requested and used`,
+   - `auto-detected config used`,
+   - `requested config file not found -> default fallback`,
+   - `no config found -> default fallback`.
+2. **Extend `IgnoreManager`** for multiple ignore files:
    - `.gitignore`, `.dockerignore`, `.cursorignore`, `.npmignore`.
-   - Conserver l’approche hiérarchique/lazy-loading et le cache des specs.
-3. **Tracer la découverte et l’usage** des ignore files :
-   - mémoriser quels fichiers sont détectés,
-   - distinguer ceux effectivement compilés/utilisés dans le run,
-   - exposer ces infos via une API interne (`summary`/getters) consommable par `main.py`.
-4. **Ajouter l’affichage console final** dans `main.py` :
-   - bloc “Ignore files” avec chemins relatifs au `project_path`,
-   - statut clair par fichier (ex. `detected+used`, `detected+unused`),
-   - sortie stable (triée) pour lecture facile.
-5. **Compatibilité et robustesse** :
-   - ne pas casser `--no-ignore`,
-   - tolérer fichiers vides/malfomés sans planter (warning propre),
-   - conserver le comportement actuel des filtres YAML (`include_patterns`, `common_filters`, etc.).
+   - Keep hierarchical/lazy-loading approach and spec cache.
+3. **Track ignore file discovery and usage**:
+   - record which files are detected,
+   - distinguish those actually compiled/used in the run,
+   - expose via internal API (`summary`/getters) for `main.py`.
+4. **Add final console display** in `main.py`:
+   - “Ignore files” block with paths relative to `project_path`,
+   - clear per-file status (e.g. `detected+used`, `detected+unused`),
+   - stable sorted output for easy reading.
+5. **Compatibility and robustness**:
+   - do not break `--no-ignore`,
+   - tolerate empty/malformed files without crashing (clean warning),
+   - keep current YAML filter behavior (`include_patterns`, `common_filters`, etc.).
 
 ## Validation
-- Exécuter les scénarios CLI suivants et vérifier la nouvelle sortie console :
+- Run these CLI scenarios and verify new console output:
   - `python3 /opt/AIContextCraft/aicc.py -c "config-concat-code.yaml"`
   - `python3 /opt/AIContextCraft/aicc.py`
-  - cas sans fichier config présent,
-  - cas avec `--no-ignore`.
-- Vérifier que le contenu généré reste cohérent (pas de régression de sélection des fichiers).
-- Procédure tests Python (projet AIContextCraft) :
-  - utiliser `.aicc_venv` (ou le créer puis installer `requirements.txt` si absent),
-  - exécuter `pytest` (ciblé ou suite `tests` selon couverture disponible),
-  - reporter en sortie : nombre de tests collectés, résultat pass/fail, warnings.
+  - case with no config file present,
+  - case with `--no-ignore`.
+- Verify generated content remains coherent (no file selection regression).
+- Python test procedure (AIContextCraft project):
+  - use `.aicc_venv` (or create and install `requirements.txt` if missing),
+  - run `pytest` (targeted or full `tests` suite as coverage allows),
+  - report: tests collected, pass/fail, warnings.
 
-## Publication du plan (demandée)
-- Ajouter une étape de publication : copier le plan validé dans `docs/plans/<branch-name>/` et le renommer en `YYYY_MM_DD_HH:MM_<plan-title>.plan.md` (titre en kebab-case ASCII).
+## Plan publication (requested)
+- Add publication step: copy validated plan to `docs/plans/` and rename to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` (ASCII kebab-case title).
 
 ---
-## Compte rendu d'implementation
+## Implementation report
 
-### Changements réalisés
+### Changes made
 - `main.py`
-  - Ajout d'un statut console explicite sur la résolution de configuration :
-    - config explicite utilisée,
-    - config auto-détectée utilisée,
-    - config explicite introuvable avec fallback defaults,
-    - aucune config trouvée avec fallback defaults.
-  - Ajout d'un bloc console final listant les fichiers d'ignore détectés avec chemin relatif et statut (`trouve+utilise`, `trouve+non_utilise`, etc.).
-  - Mise à jour des logs du Bouclier natif pour refléter les ignore files supportés (pas uniquement `.gitignore`).
+  - Explicit console status for config resolution:
+    - explicit config used,
+    - auto-detected config used,
+    - explicit config not found with default fallback,
+    - no config found with default fallback.
+  - Final console block listing detected ignore files with relative path and status (`found+used`, `found+unused`, etc.).
+  - Shield native logs updated to reflect all supported ignore file types (not only `.gitignore`).
 - `craft/ignore_manager.py`
-  - Extension du support hiérarchique aux fichiers : `.gitignore`, `.dockerignore`, `.cursorignore`, `.npmignore`.
-  - Conservation de l'approche lazy-loading avec cache par dossier.
-  - Ajout d'un scan de découverte des ignore files et d'un reporting interne (détecté, utilisé, actif, invalide).
-  - Exposition d'une API `get_ignore_file_report()` pour consommation par la CLI.
+  - Hierarchical support extended to `.gitignore`, `.dockerignore`, `.cursorignore`, `.npmignore`.
+  - Lazy-loading with per-directory cache preserved.
+  - Ignore file discovery scan and internal reporting (detected, used, active, invalid).
+  - `get_ignore_file_report()` API exposed for CLI consumption.
 - `tests/test_ignore_manager.py`
-  - Ajout de tests pour la prise en charge de `.dockerignore`, `.cursorignore`, `.npmignore`.
-  - Ajout de tests sur le reporting détecté/utilisé/actif.
+  - Tests for `.dockerignore`, `.cursorignore`, `.npmignore`.
+  - Tests for detected/used/active reporting.
 - `tests/test_aicc.py`
-  - Ajout d'un test de sortie console validant le statut de config et le listing des ignore files.
+  - Console output test validating config status and ignore file listing.
 
-### Validation exécutée
-- Vérification CLI réalisée :
+### Validation executed
+- CLI verification:
   - `python aicc.py -c config-concat-code.yaml --no-clipboard --no-timestamp`
   - `python aicc.py --no-clipboard --no-timestamp`
-  - Résultat : la console affiche bien le mode config utilisé et le listing des ignore files avec statuts.
-- Tests Python exécutés dans `.aicc_venv` :
-  - Commande : `PYTHONPATH=/opt/AIContextCraft /opt/AIContextCraft/.aicc_venv/bin/python -m pytest tests --confcutdir=/opt/AIContextCraft -o cache_dir=/opt/AIContextCraft/.pytest_cache`
-  - Collectés : 29 tests
-  - Résultat : 29 passed
-  - Warnings : 84 warnings (`DeprecationWarning` pathspec sur `gitwildmatch`)
+  - Result: console shows config mode used and ignore file listing with statuses.
+- Python tests in `.aicc_venv`:
+  - Command: `PYTHONPATH=/opt/AIContextCraft /opt/AIContextCraft/.aicc_venv/bin/python -m pytest tests --confcutdir=/opt/AIContextCraft -o cache_dir=/opt/AIContextCraft/.pytest_cache`
+  - Collected: 29 tests
+  - Result: 29 passed
+  - Warnings: 84 warnings (`DeprecationWarning` pathspec on `gitwildmatch`)
 
-### Note de contexte
-- Un changement non lié est présent dans le repo : `config.yaml` apparaît supprimé (`D config.yaml`). Confirmation utilisateur reçue : conserver cet état tel quel (aucune action faite dessus).
+### Context note
+- Unrelated repo change present: `config.yaml` appears deleted (`D config.yaml`). User confirmed to keep that state (no action taken).

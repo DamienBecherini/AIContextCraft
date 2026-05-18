@@ -1,49 +1,49 @@
 ---
-name: Arbre tailles extensions
-overview: Enrichir la sortie concaténée d'AIContextCraft avec un arbre annoté (symboles ●/○, tailles concaténées + total réel), un résumé par extension, et une phrase explicative — en réutilisant les filtres `project` vs `tree` déjà en place.
+name: Tree sizes and extensions
+overview: Enrich AIContextCraft concatenated output with an annotated tree (●/○ symbols, concatenated sizes + real total), per-extension summary, and an explanatory sentence — reusing existing project vs tree filters.
 todos:
   - id: reorder-main-flow
-    content: "Réordonner main.py : final_file_list avant generate_tree, passer concatenated_paths"
+    content: "Reorder main.py: final_file_list before generate_tree, pass concatenated_paths"
     status: completed
   - id: tree-generator-metrics
-    content: "Refactoriser tree_generator.py : légende, symboles ●/○, tailles fichiers/dossiers, format_extension_summary"
+    content: "Refactor tree_generator.py: legend, ●/○ symbols, file/folder sizes, format_extension_summary"
     status: completed
   - id: assemble-output
-    content: Assembler intro + arbre + bloc extensions + contenu dans main.py
+    content: Assemble intro + tree + extension block + content in main.py
     status: completed
   - id: tests-tree-stats
-    content: Ajouter tests unitaires test_tree_generator.py + fixture tree_stats_project + MAJ expected_output basic
+    content: Add unit tests test_tree_generator.py + tree_stats_project fixture + update basic expected_output
     status: in_progress
   - id: publish-plan
-    content: Copier le plan validé dans docs/plans/refactor/phase-0/ avec horodatage
+    content: Copy validated plan to docs/plans/ with timestamped name
     status: pending
   - id: run-pytest
-    content: Exécuter pytest via .aicc_venv et rapporter résultats
+    content: Run pytest via .aicc_venv and report results
     status: pending
 isProject: false
 ---
 
-# Arbre enrichi : tailles, extensions et indicateurs visuels
+# Enriched tree: sizes, extensions, and visual indicators
 
-## Contexte actuel
+## Current context
 
-- L'arbre est produit par [`craft/tree_generator.py`](craft/tree_generator.py) via `generate_tree(directory, include_spec, tree_exclude_spec, show_sizes=False)`.
-- Les tailles ne s'affichent qu'avec `--tree-only` (`show_sizes=args.tree_only` dans [`main.py`](main.py) ligne 166).
-- Deux jeux de filtres distincts existent déjà :
-  - **Arbre** : `common_filters` + `tree_only_filters` → `tree_exclude_spec`
-  - **Concaténation** : `common_filters` + `project_only_filters` → `project_exclude_spec`
-- Un fichier peut donc être **indicatif** (visible dans l'arbre via `project_only_filters`) ou **concaténé** (présent dans `final_file_list`).
+- The tree is produced by [`craft/tree_generator.py`](craft/tree_generator.py) via `generate_tree(directory, include_spec, tree_exclude_spec, show_sizes=False)`.
+- Sizes display only with `--tree-only` (`show_sizes=args.tree_only` in [`main.py`](main.py) line 166).
+- Two distinct filter sets already exist:
+  - **Tree**: `common_filters` + `tree_only_filters` → `tree_exclude_spec`
+  - **Concatenation**: `common_filters` + `project_only_filters` → `project_exclude_spec`
+- A file can therefore be **indicative** (visible in the tree via `project_only_filters`) or **concatenated** (present in `final_file_list`).
 
 ```mermaid
 flowchart LR
-  subgraph selection [Sélection fichiers]
+  subgraph selection [File selection]
     include[include_patterns]
     common[common_filters]
     projectOnly[project_only_filters]
     treeOnly[tree_only_filters]
   end
-  include --> treePaths[Paths arbre]
-  include --> concatPaths[Paths concaténés]
+  include --> treePaths[Tree paths]
+  include --> concatPaths[Concatenated paths]
   common --> treePaths
   common --> concatPaths
   treeOnly --> treePaths
@@ -53,57 +53,57 @@ flowchart LR
   finalList --> generateTree
 ```
 
-## Comportement cible
+## Target behavior
 
-### Phrase introductive (avant l'arbre)
+### Introductory sentence (before the tree)
 
-Bloc de texte en français, placé **juste avant** `Arbre du projet : ...`, qui explique :
+English explanatory block placed **just before** `Project tree: ...`, explaining:
 
-- `●` = fichier **réellement concaténé** (filtres contenu / `project`)
-- `○` = fichier **indicatif** (présent dans l'arbre uniquement, exclu par `project_only_filters`)
-- Taille affichée sur un fichier `●` = taille disque du fichier concaténé ; pas de taille sur les `○`
-- Taille d'un dossier = somme des fichiers `●` sous ce dossier, puis `(Total réel : …)` = somme de **tous** les fichiers visibles dans l'arbre sous ce dossier
-- Section extensions : même logique (total concaténé par extension, puis total réel des fichiers visibles dans l'arbre)
+- `●` = file **actually concatenated** (content / `project` filters)
+- `○` = **indicative** file (tree only, excluded by `project_only_filters`)
+- Size on a `●` file = on-disk size of the concatenated file; no size on `○`
+- Folder size = sum of `●` files under that folder, then `(Real total: …)` = sum of **all** files visible in the tree under that folder
+- Extensions section: same logic (concatenated total per extension, then real total of files visible in the tree)
 
-### Format des lignes de l'arbre
+### Tree line format
 
-| Élément | Format proposé |
+| Element | Proposed format |
 |---------|----------------|
-| Fichier concaténé | `├── ● main.py — 1.23 KB` |
-| Fichier indicatif | `├── ○ README.md` (pas de taille) |
-| Dossier | `├── craft/ — 12.45 KB (Total réel : 18.90 KB)` |
-| Dossier vide (arborescence) | `├── build/` (sans suffixe taille si 0 octet des deux côtés) |
+| Concatenated file | `├── ● main.py — 1.23 KB` |
+| Indicative file | `├── ○ README.md` (no size) |
+| Folder | `├── craft/ — 12.45 KB (Real total: 18.90 KB)` |
+| Empty folder (structure only) | `├── build/` (no size suffix if both totals are 0 bytes) |
 
-- Réutiliser [`format_bytes`](craft/utils.py) pour un formatage cohérent avec les stats globales.
-- Séparateur ` — ` entre nom et taille pour la lisibilité.
+- Reuse [`format_bytes`](craft/utils.py) for consistency with global stats.
+- Use ` — ` separator between name and size for readability.
 
-### Section extensions (après l'arbre, avant `CONTENU DES FICHIERS`)
+### Extensions section (after tree, before `FILE CONTENTS`)
 
 ```
-Extensions (fichiers concaténés) :
-  .py      45.20 KB (Total réel : 52.10 KB)
-  .yaml     1.20 KB (Total réel :  3.40 KB)
-  (sans extension)   0 B (Total réel : 512 B)
+Extensions (concatenated files):
+  .py      45.20 KB (Real total: 52.10 KB)
+  .yaml     1.20 KB (Real total:  3.40 KB)
+  (no extension)   0 B (Real total: 512 B)
 ```
 
-- **Inclure** : toutes les extensions présentes dans `final_file_list` (concaténation).
-- **Total concaténé** : somme des tailles disque des fichiers concaténés de cette extension.
-- **Total réel** : somme des tailles disque de tous les fichiers **visibles dans l'arbre** ayant cette extension (concaténés + indicatifs).
-- Tri alphabétique des extensions ; extension vide → libellé `(sans extension)`.
+- **Include**: all extensions present in `final_file_list` (concatenation).
+- **Concatenated total**: sum of on-disk sizes of concatenated files for that extension.
+- **Real total**: sum of on-disk sizes of all files **visible in the tree** with that extension (concatenated + indicative).
+- Sort extensions alphabetically; empty extension → label `(no extension)`.
 
-### Mode `--tree-only`
+### `--tree-only` mode
 
-- Conserver le comportement actuel (pas de lecture de contenu).
-- Appliquer **le même** arbre enrichi + section extensions (les tailles ne dépendent plus de `show_sizes` lié à `--tree-only`).
+- Keep current behavior (no content reading).
+- Apply the **same** enriched tree + extensions section (sizes no longer tied to `show_sizes` from `--tree-only`).
 
-## Modifications techniques
+## Technical changes
 
-### 1. Réordonner le flux dans [`main.py`](main.py)
+### 1. Reorder flow in [`main.py`](main.py)
 
-Aujourd'hui l'arbre est généré **avant** `final_file_list`. Inverser :
+Today the tree is generated **before** `final_file_list`. Reverse:
 
-1. Construire `final_file_list` (logique `os.walk` existante, lignes 171–188).
-2. Appeler `generate_tree` avec le set des chemins concaténés :
+1. Build `final_file_list` (existing `os.walk` logic, lines 171–188).
+2. Call `generate_tree` with the set of concatenated paths:
 
 ```python
 concatenated_paths = set(final_file_list)
@@ -115,11 +115,11 @@ project_tree = generate_tree(
 )
 ```
 
-3. Assembler la sortie : `intro + project_tree + extension_block + contenu`.
+3. Assemble output: `intro + project_tree + extension_block + content`.
 
-### 2. Refactoriser [`craft/tree_generator.py`](craft/tree_generator.py)
+### 2. Refactor [`craft/tree_generator.py`](craft/tree_generator.py)
 
-**Nouvelle signature** (remplacer `show_sizes`) :
+**New signature** (replace `show_sizes`):
 
 ```python
 def generate_tree(
@@ -130,120 +130,119 @@ def generate_tree(
 ) -> str
 ```
 
-**Algorithme** :
+**Algorithm**:
 
-1. Phase collecte (inchangée) : `paths_for_tree` + remontée des parents → `final_paths_for_tree`.
-2. Phase métriques : pour chaque fichier dans `final_paths_for_tree` :
-   - `real_size = path.stat().st_size` (avec garde `OSError`)
-   - `concat_size = real_size` si `path in concatenated_paths` else `0`
-3. Phase agrégation dossiers : parcourir les chemins du plus profond au plus superficiel ; pour chaque répertoire, sommer `concat_size` et `real_size` des descendants fichiers.
-4. Phase rendu : lignes d'arbre existantes + symbole + suffixe taille selon les règles ci-dessus.
-5. Retourner une structure ou chaîne incluant intro + arbre ; **ou** exposer deux fonctions :
+1. Collection phase (unchanged): `paths_for_tree` + parent walk-up → `final_paths_for_tree`.
+2. Metrics phase: for each file in `final_paths_for_tree`:
+   - `real_size = path.stat().st_size` (with `OSError` guard)
+   - `concat_size = real_size` if `path in concatenated_paths` else `0`
+3. Folder aggregation: walk paths deepest-first; for each directory, sum descendant file `concat_size` and `real_size`.
+4. Render phase: existing tree lines + symbol + size suffix per rules above.
+5. Return structure or string including intro + tree; **or** expose:
    - `build_tree_legend() -> str`
    - `generate_tree(...) -> str`
    - `format_extension_summary(tree_files, concatenated_paths) -> str`
 
-Extraire les helpers purs dans le même module (facilite les tests unitaires) :
+Extract pure helpers in the same module (easier unit tests):
 
 - `_file_sizes(path) -> int`
 - `_aggregate_dir_sizes(paths, concatenated_paths) -> dict[Path, tuple[int, int]]`
 - `format_extension_summary(directory, tree_file_paths, concatenated_paths) -> str`
 
-### 3. Intro et assemblage
+### 3. Intro and assembly
 
-Dans `generate_tree` ou une fonction dédiée `build_project_tree_section(...)` :
+In `generate_tree` or dedicated `build_project_tree_section(...)`:
 
 ```text
 {legend_paragraph}
 
-Arbre du projet : {resolved_path}
+Project tree: {resolved_path}
 ├── ...
 ```
 
-Puis dans `main.py` :
+Then in `main.py`:
 
 ```python
 extension_summary = format_extension_summary(project_path, tree_paths, concatenated_paths)
 full_body = (
     project_tree + "\n\n" + extension_summary + "\n\n"
-    + separator + "\nCONTENU DES FICHIERS\n" + ...
+    + separator + "\nFILE CONTENTS\n" + ...
 )
 ```
 
 ### 4. Tests
 
-| Fichier | Action |
+| File | Action |
 |---------|--------|
-| Nouveau `tests/test_tree_generator.py` | Tests unitaires : agrégation dossiers, symboles, extensions, fichiers `○` sans taille |
-| Nouveau `tests/test_projects/tree_stats_project/` | Projet minimal : `app/main.py` (concaténé), `README.md` via `project_only_filters` (indicatif), `config.yaml` |
-| [`tests/test_projects/basic_project/expected_output.txt`](tests/test_projects/basic_project/expected_output.txt) | Régénérer via exécution ciblée (tous les fichiers du test sont concaténés → uniquement `●`) |
-| [`tests/test_aicc.py`](tests/test_aicc.py) | Vérifier que `find_content_start` sur `"Arbre du projet :"` reste valide ; ajouter `test_tree_stats_project` avec assertions ciblées sur `●`, `○`, `(Total réel`, section `Extensions` |
+| New `tests/test_tree_generator.py` | Unit tests: folder aggregation, symbols, extensions, `○` files without size |
+| New `tests/test_projects/tree_stats_project/` | Minimal project: `app/main.py` (concatenated), `README.md` via `project_only_filters` (indicative), `config.yaml` |
+| [`tests/test_projects/basic_project/expected_output.txt`](tests/test_projects/basic_project/expected_output.txt) | Regenerate via targeted run (all test files concatenated → only `●`) |
+| [`tests/test_aicc.py`](tests/test_aicc.py) | Verify `find_content_start` on `"Project tree:"` remains valid; add `test_tree_stats_project` asserting `●`, `○`, `(Real total`, `Extensions` section |
 
-Procédure de validation post-implémentation (règle projet) :
+Post-implementation validation (project rule):
 
 ```bash
 .aicc_venv/bin/python -m pytest tests
 ```
 
-### 5. Documentation légère
+### 5. Light documentation
 
-- Mettre à jour la description de `--tree-only` dans l'argument parser [`main.py`](main.py) (l'arbre affiche désormais les tailles par défaut, pas seulement en mode tree-only).
-- Optionnel : une phrase dans [`README.md`](README.md) section « Project Tree » sur les symboles ●/○.
+- Update `--tree-only` help in [`main.py`](main.py) (tree now shows sizes by default, not only in tree-only mode).
+- Optional: one sentence in [`README.md`](README.md) “Project Tree” section on ●/○ markers.
 
-## Publication du plan
+## Plan publication
 
-À l'exécution, après validation du plan :
+On execution, after plan validation:
 
-- Créer [`docs/plans/refactor/phase-0/`](docs/plans/refactor/phase-0/) si absent.
-- Copier le plan validé sous le nom `YYYY_MM_DD_HH:MM_arbre-tailles-extensions.plan.md` (timestamp au moment de la copie, titre en kebab-case).
+- Copy the validated plan to `docs/plans/` as `YYYY_MM_DD_HH:MM_refactor__phase-0_arbre-tailles-extensions.plan.md` (timestamp at copy time, kebab-case title).
 
-## Fichiers principaux impactés
+## Main impacted files
 
-- [`craft/tree_generator.py`](craft/tree_generator.py) — cœur de la fonctionnalité
-- [`main.py`](main.py) — ordre d'exécution, assemblage sortie
-- [`craft/utils.py`](craft/utils.py) — réutilisation de `format_bytes` (import depuis tree_generator)
-- Tests : nouveau module + fixture projet + mise à jour `expected_output.txt`
+- [`craft/tree_generator.py`](craft/tree_generator.py) — core feature
+- [`main.py`](main.py) — execution order, output assembly
+- [`craft/utils.py`](craft/utils.py) — reuse `format_bytes` (import from tree_generator)
+- Tests: new module + project fixture + `expected_output.txt` update
 
-## Exemple de rendu attendu (extrait)
+## Expected render sample (excerpt)
 
 ```text
-Légende : ● fichier concaténé dans le contenu ci-dessous ; ○ fichier affiché à titre indicatif (exclu par project_only_filters). Les tailles des dossiers et extensions indiquent d'abord le total des fichiers ●, puis entre parenthèses le total réel de tous les fichiers visibles dans l'arbre.
+Legend: ● file concatenated in the content below; ○ file shown for reference only (excluded by project_only_filters). Folder and extension sizes show concatenated ● totals first, then (Real total: …) for all files visible in the tree.
 
-Arbre du projet : /opt/AIContextCraft
+Project tree: /opt/AIContextCraft
 ├── ○ README.md
 ├── ● main.py — 8.12 KB
-├── craft/ — 24.50 KB (Total réel : 28.00 KB)
+├── craft/ — 24.50 KB (Real total: 28.00 KB)
 │   ├── ● tree_generator.py — 3.21 KB
 │   └── ○ utils.py
 ...
 
-Extensions (fichiers concaténés) :
-  .py    24.50 KB (Total réel : 28.00 KB)
+Extensions (concatenated files):
+  .py    24.50 KB (Real total: 28.00 KB)
 ```
 
 ---
 
-## Compte rendu d'implementation
+## Implementation report
 
-### Changements réalisés
+### Changes delivered
 
-- **`craft/tree_generator.py`** : refactorisation complète — légende (`build_tree_legend`), symboles `●`/`○`, agrégation des tailles concaténées vs réelles par dossier, `format_extension_summary()`, nouvelle signature `generate_tree(..., concatenated_paths)` retournant `(arbre, paths)`.
-- **`main.py`** : `final_file_list` calculé avant l'arbre ; passage de `concatenated_paths` à `generate_tree` ; assemblage `arbre + extensions + contenu` ; aide `--tree-only` mise à jour.
-- **Tests** : `tests/test_tree_generator.py` (5 tests unitaires), projet fixture `tests/test_projects/tree_stats_project/`, `test_tree_stats_project_indicators` dans `test_aicc.py`, `expected_output.txt` du `basic_project` régénéré.
-- **Documentation** : phrase ajoutée dans `README.md` sur les marqueurs d'arbre.
+- **`craft/tree_generator.py`**: full refactor — legend (`build_tree_legend`), `●`/`○` symbols, concatenated vs real size aggregation per folder, `format_extension_summary()`, new `generate_tree(..., concatenated_paths)` returning `(tree, paths)`.
+- **`main.py`**: `final_file_list` computed before tree; `concatenated_paths` passed to `generate_tree`; assembly `tree + extensions + content`; updated `--tree-only` help.
+- **Tests**: `tests/test_tree_generator.py` (5 unit tests), fixture `tests/test_projects/tree_stats_project/`, `test_tree_stats_project_indicators` in `test_aicc.py`, `basic_project` `expected_output.txt` regenerated.
+- **Documentation**: sentence added in `README.md` on tree markers.
 
-### Fichiers modifiés / créés
+### Modified / created files
 
-| Fichier | Action |
+| File | Action |
 |---------|--------|
-| `craft/tree_generator.py` | Réécrit |
-| `main.py` | Modifié |
-| `tests/test_tree_generator.py` | Créé |
-| `tests/test_projects/tree_stats_project/` | Créé (config, app/main.py, README.md, mixed/) |
-| `tests/test_aicc.py` | Modifié |
-| `tests/test_projects/basic_project/expected_output.txt` | Mis à jour |
-| `README.md` | Mis à jour |
-| `docs/plans/refactor/phase-0/2026_05_17_16:43_arbre-tailles-extensions.plan.md` | Plan publié |
+| `craft/tree_generator.py` | Rewritten |
+| `main.py` | Modified |
+| `tests/test_tree_generator.py` | Created |
+| `tests/test_projects/tree_stats_project/` | Created (config, app/main.py, README.md, mixed/) |
+| `tests/test_aicc.py` | Modified |
+| `tests/test_projects/basic_project/expected_output.txt` | Updated |
+| `README.md` | Updated |
+| `docs/plans/2026_05_17_16:43_refactor__phase-0_arbre-tailles-extensions.plan.md` | Plan published |
 
 ### Validation
 
@@ -251,13 +250,13 @@ Extensions (fichiers concaténés) :
 .aicc_venv/bin/python -m pytest tests
 ```
 
-- **12 tests collectés**, tous **passés**
-- **20 warnings** (dépréciation `gitwildmatch` dans pathspec, sans impact fonctionnel)
+- **12 tests collected**, all **passed**
+- **20 warnings** (`gitwildmatch` deprecation in pathspec, no functional impact)
 
-### Comportement livré
+### Delivered behavior
 
-- Légende explicative avant l'arbre.
-- Fichiers `●` avec taille ; fichiers `○` sans taille.
-- Dossiers : total concaténé, puis `(Total réel : …)` si différent.
-- Section `Extensions (fichiers concaténés)` après l'arbre, avant le contenu.
-- Mode `--tree-only` : même arbre enrichi, sans lecture du contenu des fichiers.
+- Explanatory legend before the tree.
+- `●` files with size; `○` files without size.
+- Folders: concatenated total, then `(Real total: …)` when different.
+- `Extensions (concatenated files)` section after tree, before content.
+- `--tree-only` mode: same enriched tree, no file content reading.

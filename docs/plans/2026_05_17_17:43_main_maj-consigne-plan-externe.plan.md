@@ -1,81 +1,80 @@
 ---
-name: Maj consigne plan externe
-overview: Mettre à jour la règle Cursor de AIContextCraft pour imposer une vérification d’un plan collé depuis une autre IA, puis la génération d’un plan autoporté amélioré avant toute demande d’enregistrement, en précisant que la proposition de commit vient seulement après la réponse à la question d’append du rapport.
+name: External plan intake policy update
+overview: Update the AIContextCraft Cursor rule to require verification of pasted external AI plans and generation of an improved self-contained plan before any save prompt, with commit proposal only after the report-append question is answered.
 todos:
   - id: read-existing-rule
-    content: Confirmer la structure actuelle de la règle AIContextCraft pour préserver toutes les consignes existantes
+    content: Confirm current AIContextCraft rule structure to preserve all existing guidance
     status: pending
   - id: draft-external-plan-section
-    content: Rédiger la nouvelle section imposant vérification et réécriture autoportée d’un plan externe
+    content: Draft new section requiring verification and self-contained rewrite of external plans
     status: pending
   - id: merge-with-existing-policy
-    content: Intégrer la section sans altérer les sections existantes (publication, report persistence, commit proposal, tests)
+    content: Integrate section without altering existing parts (publication, report persistence, commit proposal, tests)
     status: pending
   - id: validate-final-rule
-    content: Relire et vérifier la cohérence du flux complet avant demande d’enregistrement
+    content: Review and verify full flow coherence before save prompt
     status: pending
   - id: publish-plan-copy-step
-    content: Inclure dans l’exécution la copie du plan dans docs/plans/<branch-name>/ avec nom horodaté normalisé
+    content: Include plan copy step in docs/plans/ with normalized timestamped name
     status: pending
 isProject: false
 ---
 
-# Mise à jour des consignes de traitement des plans externes
+# Update external plan handling guidance
 
-## Objectif
+## Objective
 
-Ajouter une section de règle qui force l’agent à:
+Add a rule section that forces the agent to:
 
-- analyser un plan collé depuis une autre IA,
-- vérifier sa cohérence/complétude,
-- générer un plan **autoporté** corrigé/amélioré si nécessaire (sans référence au plan source),
-- conserver les consignes existantes, avec un ordre explicite: d’abord la question d’append du rapport, puis la proposition de message de commit.
+- analyze a plan pasted from another AI,
+- verify coherence/completeness,
+- generate a **self-contained** corrected/improved plan if needed (without referencing the source plan),
+- keep existing guidance, with explicit order: report-append question first, then commit message proposal.
 
-La règle existante est conservée et enrichie dans `[/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc](/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc)`.
+The existing rule is preserved and extended in [`/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc`](/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc).
 
-## Modifications prévues
+## Planned changes
 
-- Ajouter une nouvelle section (ex: `## External Plan Intake and Self-Contained Rewrite`) dans `[/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc](/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc)`.
-- Définir explicitement le flux obligatoire:
-  1. détecter qu’un plan externe est fourni/collé,
-  2. valider qualité/risques/lacunes,
-  3. produire un nouveau plan autoporté (sans mention du plan d’origine),
-  4. intégrer les corrections/améliorations pertinentes,
-  5. poser la question d’enregistrement/publication du plan si applicable,
-  6. après implémentation, poser la question d’append du compte rendu au plan,
-  7. seulement après la réponse utilisateur à cette question, proposer le message de commit.
-- Préciser les critères de validation minimum (clarté, faisabilité, ordre d’exécution, tests/validation, risques, dépendances).
-- Garantir la compatibilité avec les règles déjà présentes (question de publication, persistance du compte rendu, proposition de commit message, procédure de tests Python), en verrouillant l’ordre “question d’append -> réponse utilisateur -> proposition commit”.
+- Add a new section (e.g. `## External Plan Intake and Self-Contained Rewrite`) in [`/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc`](/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc).
+- Define the mandatory flow explicitly:
+  1. detect that an external plan was provided/pasted,
+  2. validate quality/risks/gaps,
+  3. produce a new self-contained plan (no mention of the original plan),
+  4. integrate relevant corrections/improvements,
+  5. ask the plan save/publication question if applicable,
+  6. after implementation, ask whether to append the report to the plan,
+  7. only after the user's answer to that question, propose the commit message.
+- Specify minimum validation criteria (clarity, feasibility, execution order, tests/validation, risks, dependencies).
+- Ensure compatibility with existing rules (publication question, report persistence, commit message proposal, Python test procedure), locking order “append question → user answer → commit proposal”.
 
-## Vérification
+## Verification
 
-- Relire la règle modifiée pour confirmer qu’aucune consigne existante n’a été supprimée.
-- Vérifier que la séquence “réécriture autoportée avant demande d’enregistrement” est non ambiguë et prioritaire quand un plan externe est collé.
-- Vérifier que la proposition de commit n’apparaît jamais avant la réponse utilisateur à la question d’append du rapport.
+- Re-read the modified rule to confirm no existing guidance was removed.
+- Verify the sequence “self-contained rewrite before save prompt” is unambiguous and prioritized when an external plan is pasted.
+- Verify commit proposal never appears before the user answers the report-append question.
 
-## Publication du plan (demandée)
+## Plan publication (requested)
 
-- Créer `docs/plans/<branch-name>/` si nécessaire.
-- Copier le plan validé dans ce dossier.
-- Renommer en `YYYY_MM_DD_HH:MM_<plan-title>.plan.md` avec `<plan-title>` en kebab-case ASCII.
+- Copy the validated plan into `docs/plans/`.
+- Rename to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` with ASCII kebab-case title.
 
 ---
-## Compte rendu d'implementation
+## Implementation report
 
-### Changements realises
+### Changes made
 
-- Ajout d'une section `## External Plan Intake and Self-Contained Rewrite` dans `/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc`.
-- Cette section impose l'analyse d'un plan externe, sa reecriture en plan autoporte, sans reference au plan source, et son amelioration/correction si pertinent.
-- La section commit a ete renforcee pour exiger l'ordre strict: question d'append du rapport -> reponse utilisateur -> proposition de message de commit.
+- Added section `## External Plan Intake and Self-Contained Rewrite` in `/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc`.
+- This section requires analyzing an external plan, rewriting it as a self-contained plan without reference to the source, and improving/correcting it when relevant.
+- Commit section reinforced to require strict order: report-append question → user answer → commit message proposal.
 
-### Fichiers modifies
+### Modified files
 
 - `/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc`
-- `/opt/AIContextCraft/docs/plans/main/2026_05_17_17:43_maj-consigne-plan-externe.plan.md`
+- `/opt/AIContextCraft/docs/plans/2026_05_17_17:43_main_maj-consigne-plan-externe.plan.md`
 
 ### Validation
 
-- Relecture complete de la regle pour verifier que les consignes existantes sont conservees.
-- Verification de coherence du flux "plan externe -> plan autoporte -> confirmation".
-- Verification explicite de la contrainte d'ordre pour la proposition du commit.
-- Verification linter via `ReadLints`: aucune erreur.
+- Full rule review to verify existing guidance is preserved.
+- Flow coherence verified: external plan → self-contained plan → confirmation.
+- Explicit order constraint verified for commit proposal.
+- Linter check via `ReadLints`: no errors.

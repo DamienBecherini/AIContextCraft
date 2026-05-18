@@ -1,68 +1,68 @@
 ---
 name: README AIContextCraft audit
-overview: "Le README est globalement à jour sur le CLI et l’architecture C4, mais il mérite une mise à jour ciblée : typo, dépendances/installation, options CLI manquantes, encodage robuste (phase 1.8), tests, et alignement de la roadmap avec ROADMAP.md."
+overview: "README is mostly up to date on CLI and C4 architecture but needs targeted updates: typo, dependencies/installation, missing CLI options, robust encoding (phase 1.8), tests, and roadmap alignment with ROADMAP.md."
 todos:
   - id: fix-readme-typo-install
-    content: Corriger H1 typo + section Installation (requirements.txt, .aicc_venv)
+    content: Fix H1 typo + Installation section (requirements.txt, .aicc_venv)
     status: completed
   - id: doc-cli-encoding-tree
-    content: Ajouter --tree-only et --encoding au tableau + Key Features (encodage robuste)
+    content: Add --tree-only and --encoding to table + Key Features (robust encoding)
     status: completed
   - id: add-dev-tests-roadmap
-    content: Section Development/pytest + aligner roadmap avec ROADMAP.md + titre config YAML
+    content: Development/pytest section + align roadmap with ROADMAP.md + YAML config title
     status: completed
   - id: validate-help-snapshot
-    content: Comparer python main.py --help au snapshot README et publier le plan dans docs/plans/
+    content: Compare python main.py --help to README snapshot and publish plan in docs/plans/
     status: in_progress
 isProject: false
 ---
 
-# Mise à jour du README AIContextCraft
+# AIContextCraft README update
 
 ## Verdict
 
-**Oui, une mise à jour est recommandée** — pas une réécriture complète. Le README reflète déjà correctement la majorité du comportement actuel (Zero-Config, formats `xml|markdown|text`, ignore hiérarchique, `--git-diff`, sortie `build/aicc_context.<ext>`, doc C4). Les écarts sont surtout des **oublis**, une **typo**, et des sections **partiellement obsolètes** par rapport aux livraisons récentes (phase 1.8, 36 tests, `charset-normalizer`).
+**Yes, an update is recommended** — not a full rewrite. The README already reflects most current behavior (Zero-Config, `xml|markdown|text` formats, hierarchical ignore, `--git-diff`, `build/aicc_context.<ext>` output, C4 docs). Gaps are mostly **omissions**, a **typo**, and sections **partially outdated** vs recent deliveries (phase 1.8, 36 tests, `charset-normalizer`).
 
-## Écarts constatés (priorisés)
+## Gaps found (prioritized)
 
-### Bloquants / visibles
+### Blocking / visible
 
-| Problème | README actuel | Réalité du code |
+| Issue | Current README | Code reality |
 |----------|---------------|-----------------|
-| Titre H1 du fichier | `# AI Context Craft Craft Craft` (l.1) | Typo évidente à corriger en `# AI Context Craft` |
-| Installation | `pip install pyyaml tiktoken` uniquement | [`requirements.txt`](/opt/AIContextCraft/requirements.txt) liste 7 deps : `pyyaml`, `tiktoken`, `pathspec`, `pytest`, `rich`, `pyperclip`, `charset-normalizer` |
-| Tableau des options CLI | 15 flags documentés | [`main.py`](/opt/AIContextCraft/main.py) expose aussi `--tree-only` et `--encoding` (présents dans le snapshot `--help` mais absents du tableau l.84–103) |
+| File H1 title | `# AI Context Craft Craft Craft` (line 1) | Obvious typo; should be `# AI Context Craft` |
+| Installation | `pip install pyyaml tiktoken` only | [`requirements.txt`](/opt/AIContextCraft/requirements.txt) lists 7 deps: `pyyaml`, `tiktoken`, `pathspec`, `pytest`, `rich`, `pyperclip`, `charset-normalizer` |
+| CLI options table | 15 documented flags | [`main.py`](/opt/AIContextCraft/main.py) also exposes `--tree-only` and `--encoding` (in `--help` snapshot but missing from table lines 84–103) |
 
-### Fonctionnalités non documentées
+### Undocumented features
 
-- **`--tree-only`** : mode arbre seul (tailles/extensions), déjà dans le snapshot d’aide du README mais pas dans « Key Features » ni le tableau CLI.
-- **Encodage robuste (phase 1.8 step 3)** : [`craft/utils.py`](/opt/AIContextCraft/craft/utils.py) `read_file_with_fallback()` utilise `charset-normalizer` après échec UTF-8 ; le README ne mentionne ni la dépendance ni le comportement (détection + fallback `replace` avec warning).
-- **Tests** : 36 tests collectés (`pytest tests`) ; aucune section « Development / Testing » alors que le projet est modulaire (`craft/`) et testé.
+- **`--tree-only`**: tree-only mode (sizes/extensions); already in README `--help` snapshot but not in “Key Features” or CLI table.
+- **Robust encoding (phase 1.8 step 3)**: [`craft/utils.py`](/opt/AIContextCraft/craft/utils.py) `read_file_with_fallback()` uses `charset-normalizer` after UTF-8 failure; README mentions neither dependency nor behavior (detection + controlled `replace` fallback with warning).
+- **Tests**: 36 tests collected (`pytest tests`); no “Development / Testing” section despite modular `craft/` layout and test coverage.
 
-### Incohérences mineures
+### Minor inconsistencies
 
-- **Section Configuration** : titre `Configuration (config.yaml)` alors que l’auto-détection ne cherche pas `config.yaml` (candidats : `.aicc.yaml`, `aicc.yaml`, `aicc.yml`, `config-concat-code.yaml` — cohérent ailleurs dans le README).
-- **Roadmap intégrée** (l.256–263) : Phase 3 décrite comme « Git diff disponible » alors que [`ROADMAP.md`](/opt/AIContextCraft/ROADMAP.md) place le git-diff en **état actuel / Phase 1** et réserve la **Phase 3** au filtrage Focus (`--focus-git`, `--focus`). Risque de confusion pour les contributeurs.
-- **venv** : exemples utilisent `venv` générique ; la convention du repo (règles Cursor + plans récents) est `.aicc_venv`.
-- **URL clone** : placeholder `github.com/your-username/ai-context-craft` — à laisser tel quel ou remplacer si une URL réelle existe (hors scope technique).
+- **Configuration section**: title `Configuration (config.yaml)` while auto-detection does not look for `config.yaml` (candidates: `.aicc.yaml`, `aicc.yaml`, `aicc.yml`, `config-concat-code.yaml` — consistent elsewhere in README).
+- **Inline roadmap** (lines 256–263): Phase 3 described as “Git diff available” while [`ROADMAP.md`](/opt/AIContextCraft/ROADMAP.md) places git-diff in **current state / Phase 1** and reserves **Phase 3** for Focus filtering (`--focus-git`, `--focus`). Risk of contributor confusion.
+- **venv**: examples use generic `venv`; repo convention (Cursor rules + recent plans) is `.aicc_venv`.
+- **Clone URL**: placeholder `github.com/your-username/ai-context-craft` — leave as-is or replace if real URL exists (out of technical scope).
 
-### Déjà correct (ne pas sur-documenter)
+### Already correct (do not over-document)
 
-- Quick Start : `python main.py`, alias `aicc.py`, sortie par défaut `build/aicc_context.<ext>`.
-- Two-stage filtering (Shield + Scalpel), formats LLM, clipboard, `--output-format` / `--output-destination`.
-- Section **Architecture Documentation** alignée avec [`docs/architecture/README.md`](/opt/AIContextCraft/docs/architecture/README.md) et `./scripts/architecture/generate-all.sh`.
+- Quick Start: `python main.py`, `aicc.py` alias, default output `build/aicc_context.<ext>`.
+- Two-stage filtering (Shield + Scalpel), LLM formats, clipboard, `--output-format` / `--output-destination`.
+- **Architecture Documentation** section aligned with [`docs/architecture/README.md`](/opt/AIContextCraft/docs/architecture/README.md) and `./scripts/architecture/generate-all.sh`.
 
 ```mermaid
 flowchart LR
-  subgraph readme_gaps [Ecarts README]
-    typo[Typo titre]
-    deps[requirements incomplets]
+  subgraph readme_gaps [README gaps]
+    typo[Title typo]
+    deps[incomplete requirements]
     cli[tree-only encoding]
     enc[charset-normalizer]
-    tests[section pytest]
+    tests[pytest section]
     roadmap[roadmap vs ROADMAP.md]
   end
-  subgraph code_truth [Source de verite]
+  subgraph code_truth [Source of truth]
     main[main.py CLI]
     req[requirements.txt]
     utils[craft/utils.py]
@@ -74,14 +74,14 @@ flowchart LR
   rm --> roadmap
 ```
 
-## Plan d’édition proposé
+## Proposed edit plan
 
-Fichier unique : [`/opt/AIContextCraft/README.md`](/opt/AIContextCraft/README.md).
+Single file: [`/opt/AIContextCraft/README.md`](/opt/AIContextCraft/README.md).
 
-### 1. Corrections immédiates
+### 1. Immediate fixes
 
-- Corriger le H1 (supprimer le doublon « Craft Craft »).
-- Remplacer l’installation manuelle par :
+- Fix H1 (remove duplicate “Craft Craft”).
+- Replace manual install with:
 
 ```bash
 python -m venv .aicc_venv
@@ -89,73 +89,72 @@ source .aicc_venv/bin/activate
 pip install -r requirements.txt
 ```
 
-- Conserver une note Windows pour `Scripts\activate`.
+- Keep a Windows note for `Scripts\activate`.
 
-### 2. Enrichir « Key Features »
+### 2. Enrich “Key Features”
 
-Ajouter une puce courte pour :
+Add short bullets for:
 
-- `--tree-only` (aperçu structure sans contenu).
-- Lecture robuste des encodages (UTF-8 strict, détection `charset-normalizer`, fallback contrôlé) — une phrase, lien implicite avec `--encoding`.
+- `--tree-only` (structure preview without file content).
+- Robust file encoding reads (strict UTF-8, `charset-normalizer` detection, controlled fallback) — one sentence, implicit link to `--encoding`.
 
-### 3. Compléter le tableau CLI
+### 3. Complete CLI table
 
-Ajouter deux lignes au tableau (l.84–103) :
+Add two rows to the table (lines 84–103):
 
 | Flag | Description |
 |------|-------------|
-| `--tree-only` | Génère uniquement l’arbre du projet (tailles, extensions), sans contenu des fichiers. |
-| `--encoding ENCODING` | Encodage cible pour la lecture des fichiers (défaut : `utf-8`). |
+| `--tree-only` | Generate project tree only (sizes, extensions), without file contents. |
+| `--encoding ENCODING` | Target encoding for file reads (default: `utf-8`). |
 
-Vérifier que le snapshot `--help` (l.105–149) reste synchronisé après édition (déjà OK pour ces flags).
+Verify embedded `--help` snapshot (lines 105–149) stays in sync after edit (already OK for these flags).
 
-### 4. Nouvelle section « Development » (courte)
+### 4. New short “Development” section
 
-Insérer avant « Contributing » :
+Insert before “Contributing”:
 
 ```bash
 .aicc_venv/bin/python -m pytest tests
-# ciblé : .aicc_venv/bin/python -m pytest tests/test_context_builder.py
+# targeted: .aicc_venv/bin/python -m pytest tests/test_context_builder.py
 ```
 
-Mentionner ~36 tests (mettre à jour si le nombre change lors de l’exécution).
+Mention ~36 tests (update if count changes on run).
 
-### 5. Aligner la roadmap du README
+### 5. Align README roadmap
 
-Remplacer le bloc roadmap inline (l.256–263) par un renvoi concis :
+Replace inline roadmap block (lines 256–263) with a concise pointer:
 
-- Phase 0–1 : terminées (référence [`ROADMAP.md`](/opt/AIContextCraft/ROADMAP.md)).
-- Phase 2 : tree-sitter / multi-langage.
-- Phase 3 : Focus (pas git-diff, déjà livré).
+- Phases 0–1: complete (see [`ROADMAP.md`](/opt/AIContextCraft/ROADMAP.md)).
+- Phase 2: tree-sitter / multi-language.
+- Phase 3: Focus (not git-diff, already delivered).
 
-Éviter de dupliquer tout le contenu de `ROADMAP.md` — une liste à puces + lien suffit.
+Avoid duplicating all of `ROADMAP.md` — bullet list + link is enough.
 
 ### 6. Configuration
 
-- Renommer le titre de section en `Configuration (YAML)` ou lister explicitement les noms de fichiers auto-détectés.
-- Optionnel : préciser que `output_path` dans un fichier de config surcharge le fallback `build/aicc_context.<ext>`.
+- Rename section title to `Configuration (YAML)` or explicitly list auto-detected file names.
+- Optional: note that `output_path` in a config file overrides `build/aicc_context.<ext>` fallback.
 
-### 7. Validation post-édition
+### 7. Post-edit validation
 
-- Relecture visuelle du README (liens relatifs, cohérence anglais).
-- Exécuter `python main.py --help` et comparer au snapshot embarqué (mise à jour du bloc si divergence).
-- Pas de changement de code requis pour cette tâche.
+- Visual README review (relative links, English consistency).
+- Run `python main.py --help` and compare to embedded snapshot (update block if divergent).
+- No code changes required for this task.
 
-## Publication du plan (demandée)
+## Plan publication (requested)
 
-Après validation du plan :
+After plan validation:
 
-1. Créer `docs/plans/<branch-name>/` si absent (branche courante au moment de l’exécution).
-2. Copier ce plan validé dans ce dossier.
-3. Renommer en `YYYY_MM_DD_HH:MM_readme-audit-update.plan.md` (kebab-case ASCII pour le titre).
+1. Copy this validated plan into `docs/plans/` (current branch slug in filename).
+2. Rename to `YYYY_MM_DD_HH:MM_main_readme-audit-update.plan.md` (ASCII kebab-case title).
 
-## Hors scope (sauf demande explicite)
+## Out of scope (unless explicitly requested)
 
-- Traduction FR/EN du README.
-- Remplacement de l’URL GitHub placeholder.
-- Mise à jour de `ROADMAP.md` (déjà à jour).
-- Modification de `config-concat-code.yaml` (fichier local d’exemple du dépôt, pas doc utilisateur).
+- FR/EN README translation (this plan task is documentation update; plans are now in English).
+- Replace GitHub placeholder URL.
+- Update `ROADMAP.md` (already up to date).
+- Modify `config-concat-code.yaml` (local example file, not user docs).
 
-## Estimation
+## Estimate
 
-~30–45 minutes de rédaction + relecture ; faible risque de régression (documentation seule).
+~30–45 minutes writing + review; low regression risk (documentation only).
