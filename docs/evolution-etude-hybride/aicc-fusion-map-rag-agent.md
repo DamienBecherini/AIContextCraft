@@ -85,7 +85,7 @@ Ce ranking multi-signaux est plus fiable qu'un RAG pur.
 - `Formatter` conserve son role de sortie XML/Markdown optimisee.
 - `IgnoreManager` et `FilterManager` restent la couche "Shield + Scalpel".
 
-### Reutilisation directe POC
+### Reutilisation directe POC Atlas
 
 - Le pattern `LlmAdapter` est transferable vers AICC pour:
   - routeur low-cost,
@@ -167,6 +167,28 @@ Livrable:
 Livrable:
 - investigation iterative quasi autonome.
 
+### 7.1 Plan d'execution court terme (10 jours)
+
+Jours 1-2:
+- creer `tests/eval_harness/` avec cas pieges versionnes;
+- definir oracles (must-have / must-not-have files) par prompt.
+
+Jours 3-4:
+- implementer baseline lexical + budget tokens;
+- generer rapport de selection par fichier (score + raison).
+
+Jours 5-6:
+- ajouter score semantique local (embeddings);
+- lancer ablation et comparer aux baselines.
+
+Jours 7-8:
+- ajouter expansion dependances 1-hop;
+- appliquer policy `full/header/skip` sous budget.
+
+Jours 9-10:
+- stabiliser seuils/ponderations via eval;
+- figer criteres d'acceptation V1 et publier bilan metriques.
+
 
 ## 8) Risques majeurs et garde-fous
 
@@ -196,6 +218,29 @@ Pour eviter les decisions "au ressenti", mesurer:
 
 Mettre en place un mini corpus d'evaluation (30-50 taches realistes) pour comparer chaque iteration.
 
+### 9.1 Protocole d'ablation (obligatoire)
+
+Objectif: mesurer l'apport reel de chaque composant, et eviter les decisions au ressenti.
+
+Runs minimaux a comparer sur le meme corpus:
+
+1. Lexical seul (baseline)
+2. Semantique seul (embeddings)
+3. Hybride lexical + semantique
+4. Hybride + expansion dependances
+5. Hybride + dependances + policy budget (full/header/skip)
+
+Pour chaque run, mesurer:
+- Recall@K
+- precision top-N
+- latence p50/p95
+- tokens envoyes
+- cout estime (ou cout equivalent en tokens)
+
+Regle de validation:
+- une etape n'est retenue que si elle ameliore au moins 1 metrique prioritaire
+  (Recall@K ou precision top-N) sans degradation majeure de latence.
+
 
 ## 10) Decision framework (quand utiliser quoi)
 
@@ -211,27 +256,81 @@ Mettre en place un mini corpus d'evaluation (30-50 taches realistes) pour compar
 
 ## 11) Proposition de backlog immediat
 
-Backlog recommande court terme:
+Backlog recommande court terme (ordre d'execution):
 
-1. Ajouter couche de ranking multi-signaux (lexical + semantique + git).
-2. Sortir un rapport explicatif des choix de fichiers (transparence).
-3. Integrer Tree-sitter (au moins JS/TS/Python) pour map universelle.
-4. Ajouter mode "assembly policy" (full/header/skip par seuil score).
-5. Ajouter protocole `need_files` structure.
+1. Construire l'eval harness (projets pieges + oracles + pytest).
+2. Ajouter couche de ranking multi-signaux (lexical + semantique + git).
+3. Sortir un rapport explicatif des choix de fichiers (transparence).
+4. Integrer Tree-sitter (au moins JS/TS/Python) pour map universelle.
+5. Ajouter mode "assembly policy" (full/header/skip par seuil score).
+6. Ajouter protocole `need_files` structure.
 
 
-## 12) Open questions a trancher
+## 12) Decisions tranchees (version courante)
 
-1. Priorite UX:
-   - mode 100% local d'abord, ou routeur low-cost d'abord?
-2. Formats:
-   - XML unique garde comme format principal, ou sortie duale (XML + JSON meta)?
-3. Cible perf:
-   - latence max acceptable pour une commande `--focus`?
-4. Gouvernance cout:
-   - budget API par execution / par jour?
-5. Experience dev:
-   - interaction one-shot (copier-coller), ou mode agent continu?
+Ces decisions sont des choix d'execution pour accelerer la phase MVP.
+Elles pourront etre revisees apres les premiers cycles d'evaluation.
+
+1. **Priorite UX**
+   - Decision: mode 100% local d'abord (sans routeur LLM).
+   - Raison: reduire la complexite, maitriser la perf, valider le ranking.
+
+2. **Formats**
+   - Decision: XML pour le contexte final LLM.
+   - Decision: JSON meta pour l'orchestrateur/debug (scores, budget, raisons d'inclusion).
+   - Raison: separer lisibilite LLM et pilotage technique.
+
+3. **Cible de performance**
+   - Decision: `--focus` local < 3 secondes (cible), p95 < 5 secondes.
+   - Decision: boucle `need_files` < 15 secondes (cible) avec 1 rebouclage max en V1 agentique.
+   - Raison: conserver une UX fluide et exploitable au quotidien.
+
+4. **Gouvernance budget**
+   - Decision: profils en tokens:
+     - `fast` = 10k
+     - `deep` = 50k
+     - `max` = 100k
+   - Raison: modele de cout universel (local ou API commerciale).
+
+5. **Experience developpeur**
+   - Decision: one-shot CLI en V1/V2.
+   - Decision: mode agent interactif/TUI plus tard (V4+).
+   - Raison: limiter la dette de complexite conversationnelle.
+
+### 12.1 Infrastructure locale (guideline)
+
+Objectif: iterer massivement sans cout API et sans fuite de code.
+
+1. **Embeddings**
+   - mode local CPU prioritaire (pas besoin GPU au demarrage);
+   - preferer un modele oriente code des que possible.
+
+2. **Routeur LLM local**
+   - 8 Go RAM peut fonctionner pour tests de base, mais confort limite;
+   - 12-16 Go VRAM recommande pour une iteration fluide.
+
+3. **Securite reseau**
+   - si serveur local sur LAN: auth + proxy + pas d'exposition brute;
+   - le moteur de securite AICC reste prioritaire (ex: refus `.env`, cles, secrets).
+
+4. **Fallback**
+   - mode no-LLM obligatoire pour garantir robustesse hors infra GPU.
+
+### 12.2 Criteres d'acceptation par phase
+
+**V1 (ranking + budget, sans routeur LLM)**
+- Recall@K et precision top-N > baseline lexical seule.
+- budget tokens respecte dans 100% des runs eval.
+- logs explicatifs disponibles (raison d'inclusion/exclusion par fichier).
+
+**V2 (Tree-sitter multi-langages)**
+- `headers-only` stable sur Python + JS/TS (minimum).
+- expansion dependances 1-hop fonctionnelle sur cas eval cibles.
+
+**V3 (boucle `need_files`)**
+- schema JSON strict valide.
+- 1 rebouclage max en mode standard.
+- aucune regression des regles de securite (secrets toujours bloques).
 
 
 ## 13) Resume executif
@@ -246,5 +345,10 @@ Le meilleur chemin n'est pas "RAG pur", mais une architecture hybride orientee c
 - boucle de contexte manquant.
 
 AICC possede deja la fondation ideale (filtrage, assemblage, formats, robustesse).
-Le POC apporte la couche orchestration/adapters.
-L'etape critique pour debloquer la suite est Tree-sitter + ranking evalue par metriques.
+Le POC Atlas apporte la couche orchestration/adapters.
+
+Priorite immediate: construire l'eval harness et valider le ranking hybride par ablation
+avant d'introduire le routeur LLM. Les fondations (lexical, semantique, budget, policy
+full/header/skip) peuvent etre developpees et testees sans GPU ni API payante.
+
+L'etape critique pour debloquer la suite est: eval harness -> ranking mesure -> Tree-sitter.
