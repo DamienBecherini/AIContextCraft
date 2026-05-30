@@ -1,17 +1,17 @@
 This file is a concatenation of several source files from a project.
 
 Legend: ● file concatenated in the content below; ○ file shown for reference only (excluded by project_only_filters). Folder and Extensions section sizes show concatenated ● totals first, then (Real total: …) for all files visible in the tree.
-Project tree: /opt/AIContextCraft/tests/test_projects/basic_project
+Project tree: [NORMALIZED_PATH]
 ├── ● .gitignore — 47 B
 ├── app/ — 119 B
 │   └── ● main.py — 119 B
-├── ● config.yaml — 210 B
+├── ● config.yaml — 167 B
 └── ● utils.py — 80 B
 
 Extensions (concatenated files):
   (no extension)       47 B
   .py                  199 B
-  .yaml                210 B
+  .yaml                167 B
 
 --------------------------------------------------------------------------------
 FILE CONTENTS
@@ -50,7 +50,6 @@ common_filters:
   - "build/"
   - "expected_output.txt"
   - "*.log"
-# Keep .md files in the tree for this test
 tree_only_filters: []
 
 ================================================================================
