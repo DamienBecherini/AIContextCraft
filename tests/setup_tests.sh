@@ -138,13 +138,35 @@ EOF
 # Scenario 4: Unicode folder names and Windows-style pattern separators
 create_special_chars_project() {
     local project_dir="$TEST_PROJECTS_ROOT/special_chars_project"
-    echo -e "${COLOR_BLUE}--> Ensuring test project: 'special_chars_project'${COLOR_NC}"
+    echo -e "${COLOR_BLUE}--> Creating test project: 'special_chars_project'${COLOR_NC}"
 
+    rm -rf "$project_dir"
     mkdir -p "$project_dir/other" "$project_dir/🚀 Projects/🏰 Proxmox Homelab"
-    echo 'ignored content' > "$project_dir/other/ignored.txt"
+
+    cat << 'EOF' > "$project_dir/config_slash.yaml"
+include_patterns:
+  - "🚀 Projects/🏰 Proxmox Homelab/**"
+common_filters:
+  - ".git/"
+  - "build/"
+  - "*.log"
+tree_only_filters: []
+EOF
+
+    cat << 'EOF' > "$project_dir/config_backslash.yaml"
+include_patterns:
+  - '🚀 Projects\🏰 Proxmox Homelab\**'
+common_filters:
+  - ".git/"
+  - "build/"
+  - "*.log"
+tree_only_filters: []
+EOF
+
+    echo 'This file should not be included by focused include patterns.' > "$project_dir/other/ignored.txt"
     echo 'sample context for special-char path tests' > "$project_dir/🚀 Projects/🏰 Proxmox Homelab/context.txt"
 
-    echo "    Test project 'special_chars_project' ready."
+    echo "    Test project 'special_chars_project' created."
 }
 
 # --- Golden file generation (expected outputs) ---

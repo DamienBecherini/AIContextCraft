@@ -1,7 +1,0 @@
-include_patterns:
-  - "🚀 Projects/🏰 Proxmox Homelab/**"
-common_filters:
-  - ".git/"
-  - "build/"
-  - "*.log"
-tree_only_filters: []

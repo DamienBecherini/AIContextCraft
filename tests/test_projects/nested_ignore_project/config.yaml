@@ -1,6 +1,0 @@
-include_patterns:
-  - '**/*'
-common_filters:
-  - ".git/"
-project_only_filters: []
-tree_only_filters: []

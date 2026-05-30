@@ -367,13 +367,17 @@ High-level direction (details and ideas in [ROADMAP.md](ROADMAP.md)):
 
 ### Test fixtures
 
-Some integration tests rely on files that are **not** committed (for example `.env.local`, `*.log`, `node_modules/`, or `context.txt` blocked by the project `.gitignore`). Before running pytest, prepare fixtures from the repository root:
+Four integration-test projects (`basic_project`, `strip_comments_project`, `nested_ignore_project`, `special_chars_project`) are **generated locally** by `tests/setup_tests.sh` and **not committed** (see `tests/test_projects/.gitignore`). The static reference project `tree_stats_project/` remains in Git.
+
+Before running pytest, prepare fixtures from the repository root:
 
 ```bash
 bash tests/setup_tests.sh
 ```
 
-This script recreates test projects, adds gitignored fixture files, and generates `expected_output.txt` golden files when they are missing. Use `--golden-files` to force regeneration of golden files.
+This script recreates those projects (including gitignored files such as `.env.local`, `*.log`, `node_modules/`, or `context.txt`), and generates local `expected_output.txt` golden files when they are missing. Use `--golden-files` to force regeneration of golden files.
+
+**Do not commit** paths under the generated project directories after running tests — only commit changes to `tests/setup_tests.sh` when you intentionally change fixture definitions.
 
 On **Windows**, run the script via **Git Bash** (`bash tests/setup_tests.sh`). Do not double-click or invoke `.\tests\setup_tests.sh` from PowerShell — Windows will not execute it as a shell script.
 
@@ -415,7 +419,7 @@ Targeted run:
 
 ### Line endings
 
-Shell scripts (`.sh`) and test golden files (`expected_output.txt`) are normalized to **LF** via `.gitattributes`, so `bash tests/setup_tests.sh` works the same after a clone on Linux or Windows. Other text files follow your Git `core.autocrlf` settings; the setup script recreates test fixture sources when needed.
+Shell scripts (`.sh`) are normalized to **LF** via `.gitattributes`, so `bash tests/setup_tests.sh` works the same after a clone on Linux or Windows. Generated golden files (`expected_output.txt`) also use LF when present locally.
 
 ## 🤝 Contributing
 
