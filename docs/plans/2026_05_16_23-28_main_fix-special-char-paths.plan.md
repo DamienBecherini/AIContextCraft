@@ -60,7 +60,7 @@ Enable reliable use of folder/file names containing Unicode characters (emoji, a
 
 5. **Validate and publish the plan in AIContextCraft**
    - Run relevant tests.
-   - Copy the validated plan into `docs/plans/` with format `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` (title in ASCII kebab-case).
+   - Copy the validated plan into `docs/plans/` with format `YYYY_MM_DD_HH-MM_<branch-slug>_<plan-title>.plan.md` (title in ASCII kebab-case).
 
 ## Expected outcome
 - No more blocking for Unicode names when YAML config is well formed.
@@ -78,7 +78,7 @@ Implementation completed; all plan todos are done.
 - Centralized pattern normalization (`\` -> `/`) before PathSpec creation.
 - Regression tests added (Unicode, backslashes, guided YAML error).
 - Documentation updated with recommended examples.
-- Plan copy published at `docs/plans/2026_05_16_23:28_main_fix-special-char-paths.plan.md`.
+- Plan copy published at `docs/plans/2026_05_16_23-28_main_fix-special-char-paths.plan.md`.
 
 ### Modified files
 
@@ -89,7 +89,7 @@ Implementation completed; all plan todos are done.
 - `tests/test_projects/special_chars_project/config_backslash.yaml`
 - `tests/test_projects/special_chars_project/🚀 Projects/🏰 Proxmox Homelab/context.txt`
 - `tests/test_projects/special_chars_project/other/ignored.txt`
-- `docs/plans/2026_05_16_23:28_main_fix-special-char-paths.plan.md`
+- `docs/plans/2026_05_16_23-28_main_fix-special-char-paths.plan.md`
 
 ### Validation
 

@@ -12,7 +12,7 @@ todos:
     content: Manually validate 3 scenarios (local clipboard OK, OSC 52 fallback, OSC 52 failure).
     status: completed
   - id: publish-plan-copy
-    content: Copy validated plan to docs/plans/ as YYYY_MM_DD_HH:MM_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md.
+    content: Copy validated plan to docs/plans/ as YYYY_MM_DD_HH-MM_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md.
     status: in_progress
   - id: save-report
     content: Ask whether implementation report should be saved to plan, then act on answer.
@@ -27,7 +27,7 @@ Make `--clipboard` reliable in remote/headless environments by keeping local `py
 
 ## Files involved
 - [main.py](/opt/AIContextCraft/main.py)
-- [docs/plans/2026_05_17_18:09_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md](/opt/AIContextCraft/docs/plans/2026_05_17_18:09_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md)
+- [docs/plans/2026_05_17_18-09_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md](/opt/AIContextCraft/docs/plans/2026_05_17_18-09_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md)
 
 ## Changes to implement
 1. In [main.py](/opt/AIContextCraft/main.py), add `base64` import (keep existing `sys`).
@@ -51,7 +51,7 @@ Make `--clipboard` reliable in remote/headless environments by keeping local `py
 ## Plan publication (requested)
 After plan validation, add an execution step that:
 1. copies the validated plan into `docs/plans/`,
-2. renames to `YYYY_MM_DD_HH:MM_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md`.
+2. renames to `YYYY_MM_DD_HH-MM_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md`.
 
 ---
 ## Implementation report
@@ -64,7 +64,7 @@ After plan validation, add an execution step that:
   - non-blocking warning only if OSC 52 step fails.
 - Modified files:
   - `main.py`
-  - `docs/plans/2026_05_17_18:09_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md` (report appended)
+  - `docs/plans/2026_05_17_18-09_feature__ux-clipboard-rich_phase-1-osc52-clipboard.plan.md` (report appended)
 - Validation:
   - lint: no issues on `main.py`,
   - tests: `21 passed`, `54 warnings`,

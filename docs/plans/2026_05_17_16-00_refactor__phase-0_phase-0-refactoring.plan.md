@@ -3,7 +3,7 @@ name: phase-0-refactoring
 overview: Behavior-preserving refactor of aicc.py (~509 lines) into the craft/ package and main.py, with aicc.py compatibility shim, dead import cleanup, README update, and no regression on the 6 existing pytest tests.
 todos:
   - id: publish-plan
-    content: Save this plan to docs/plans/2026_05_17_16:00_refactor__phase-0_phase-0-refactoring.plan.md
+    content: Save this plan to docs/plans/2026_05_17_16-00_refactor__phase-0_phase-0-refactoring.plan.md
     status: completed
   - id: create-craft-structure
     content: Create craft/ with __init__.py
@@ -60,7 +60,7 @@ Target branch: `refactor/phase-0`.
 
 This plan lives in the repo at:
 
-[`docs/plans/2026_05_17_16:00_refactor__phase-0_phase-0-refactoring.plan.md`](/opt/AIContextCraft/docs/plans/2026_05_17_16:00_refactor__phase-0_phase-0-refactoring.plan.md)
+[`docs/plans/2026_05_17_16-00_refactor__phase-0_phase-0-refactoring.plan.md`](/opt/AIContextCraft/docs/plans/2026_05_17_16-00_refactor__phase-0_phase-0-refactoring.plan.md)
 
 ---
 
@@ -293,7 +293,7 @@ Extract utils, git, file processing, filters, and tree generation.
 Keep aicc.py as compatibility shim. Clean dead imports. Update README
 and tests. Preserve --git-diff and all CLI behavior.
 
-Plan: docs/plans/2026_05_17_16:00_refactor__phase-0_phase-0-refactoring.plan.md
+Plan: docs/plans/2026_05_17_16-00_refactor__phase-0_phase-0-refactoring.plan.md
 ```
 
 
@@ -312,7 +312,7 @@ Plan: docs/plans/2026_05_17_16:00_refactor__phase-0_phase-0-refactoring.plan.md
 | `tests/test_aicc.py` | `AICC_SCRIPT` → `main.py` |
 | `tests/setup_tests.sh` | `AICC_SCRIPT` → `main.py` |
 | `README.md` | `main.py` primary + `aicc.py` alias note |
-| `docs/plans/2026_05_17_16:00_refactor__phase-0_phase-0-refactoring.plan.md` | Plan published |
+| `docs/plans/2026_05_17_16-00_refactor__phase-0_phase-0-refactoring.plan.md` | Plan published |
 Dead imports `io` and `tokenize` removed (not present in final modules).
 ### Validation
 - **pytest**: 6/6 passed (`tests/test_aicc.py`, ~1.37 s, no warnings)

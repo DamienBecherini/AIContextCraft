@@ -71,7 +71,7 @@ Update the code block showing `python main.py --help` output to include the new 
 ### Modified files
 - `ROADMAP.md`
 - `README.md`
-- `docs/plans/2026_05_17_18:25_feature__ux-clipboard-rich_phase-1-documentation.plan.md`
+- `docs/plans/2026_05_17_18-25_feature__ux-clipboard-rich_phase-1-documentation.plan.md`
 
 ### Validation
 - Coherence check between documentation and CLI options detected in `main.py`

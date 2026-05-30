@@ -39,7 +39,7 @@ Set up an always-on Cursor rule in `AIContextCraft` that requires at the end of 
 3. **Plan publication (requested)**
    - Add a publication step during execution:
      - copy the validated plan into `docs/plans/`,
-     - rename to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` (ASCII kebab-case).
+     - rename to `YYYY_MM_DD_HH-MM_<branch-slug>_<plan-title>.plan.md` (ASCII kebab-case).
 
 ## Expected outcome
 - The AIContextCraft repo has a Cursor rule that forces the end-of-implementation save question.
@@ -59,7 +59,7 @@ Implementation completed; all plan todos are done for AIContextCraft.
 ### Modified files
 
 - `/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc`
-- `/opt/AIContextCraft/docs/plans/2026_05_16_23:38_main_report-save-prompt-rule.plan.md`
+- `/opt/AIContextCraft/docs/plans/2026_05_16_23-38_main_report-save-prompt-rule.plan.md`
 
 ### Validation
 

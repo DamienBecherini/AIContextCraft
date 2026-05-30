@@ -68,7 +68,7 @@ Make CLI output explicit about:
   - report: tests collected, pass/fail, warnings.
 
 ## Plan publication (requested)
-- Add publication step: copy validated plan to `docs/plans/` and rename to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` (ASCII kebab-case title).
+- Add publication step: copy validated plan to `docs/plans/` and rename to `YYYY_MM_DD_HH-MM_<branch-slug>_<plan-title>.plan.md` (ASCII kebab-case title).
 
 ---
 ## Implementation report

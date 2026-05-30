@@ -146,7 +146,7 @@ Avoid duplicating all of `ROADMAP.md` — bullet list + link is enough.
 After plan validation:
 
 1. Copy this validated plan into `docs/plans/` (current branch slug in filename).
-2. Rename to `YYYY_MM_DD_HH:MM_main_readme-audit-update.plan.md` (ASCII kebab-case title).
+2. Rename to `YYYY_MM_DD_HH-MM_main_readme-audit-update.plan.md` (ASCII kebab-case title).
 
 ## Out of scope (unless explicitly requested)
 
