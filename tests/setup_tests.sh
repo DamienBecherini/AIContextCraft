@@ -135,53 +135,46 @@ EOF
     echo "    Test project 'nested_ignore_project' created."
 }
 
+# Scenario 4: Unicode folder names and Windows-style pattern separators
+create_special_chars_project() {
+    local project_dir="$TEST_PROJECTS_ROOT/special_chars_project"
+    echo -e "${COLOR_BLUE}--> Ensuring test project: 'special_chars_project'${COLOR_NC}"
+
+    mkdir -p "$project_dir/other" "$project_dir/🚀 Projects/🏰 Proxmox Homelab"
+    echo 'ignored content' > "$project_dir/other/ignored.txt"
+    echo 'sample context for special-char path tests' > "$project_dir/🚀 Projects/🏰 Proxmox Homelab/context.txt"
+
+    echo "    Test project 'special_chars_project' ready."
+}
+
 # --- Golden file generation (expected outputs) ---
+
+resolve_aicc_python() {
+    if [[ -n "${AICC_PYTHON:-}" ]]; then
+        echo "$AICC_PYTHON"
+        return
+    fi
+    if [[ -x "$PROJECT_ROOT/.aicc_venv/Scripts/python.exe" ]]; then
+        echo "$PROJECT_ROOT/.aicc_venv/Scripts/python.exe"
+        return
+    fi
+    if [[ -x "$PROJECT_ROOT/.aicc_venv/bin/python" ]]; then
+        echo "$PROJECT_ROOT/.aicc_venv/bin/python"
+        return
+    fi
+    if command -v python3 >/dev/null 2>&1; then
+        command -v python3
+        return
+    fi
+    command -v python
+}
 
 generate_golden_files() {
     echo -e "\n${COLOR_YELLOW}--- Generating 'Golden' files (expected_output.txt) ---${COLOR_NC}"
-
-    # 1. For 'basic_project'
-    echo "  -> Generating for 'basic_project'..."
-    local basic_project_dir="$TEST_PROJECTS_ROOT/basic_project"
-    local temp_output_basic="/tmp/aicc_basic_output.txt"
-    PYTHON="${AICC_PYTHON:-python3}"
-    "$PYTHON" "$AICC_SCRIPT" \
-        --project "$basic_project_dir" \
-        --output "$temp_output_basic" \
-        --no-timestamp \
-        --config "$basic_project_dir/config.yaml"
-
-    # Strip dynamic header for a stable reference file
-    # Tree path differs per machine, so normalize it.
-    # Skip the first 4 lines and add a simple stable header.
-    {
-        echo "This file is a concatenation of several source files from a project."
-        echo ""
-        tail -n +5 "$temp_output_basic" | sed "1s|Project tree:.*|Project tree: [NORMALIZED_PATH]|"
-    } > "$basic_project_dir/expected_output.txt"
-    rm "$temp_output_basic"
-    echo -e "     ${COLOR_GREEN}File 'expected_output.txt' generated.${COLOR_NC}"
-
-
-    # 2. For 'strip_comments_project'
-    echo "  -> Generating for 'strip_comments_project' (with --strip-comments)..."
-    local strip_project_dir="$TEST_PROJECTS_ROOT/strip_comments_project"
-    local temp_output_strip="/tmp/aicc_strip_output.txt"
-    PYTHON="${AICC_PYTHON:-python3}"
-    "$PYTHON" "$AICC_SCRIPT" \
-        --project "$strip_project_dir" \
-        --output "$temp_output_strip" \
-        --no-timestamp \
-        --strip-comments
-    
-    {
-        echo "This file is a concatenation of several source files from a project."
-        echo ""
-        tail -n +5 "$temp_output_strip" | sed "1s|Project tree:.*|Project tree: [NORMALIZED_PATH]|"
-    } > "$strip_project_dir/expected_output.txt"
-    rm "$temp_output_strip"
-    echo -e "     ${COLOR_GREEN}File 'expected_output.txt' generated.${COLOR_NC}"
-
+    local PYTHON
+    PYTHON="$(resolve_aicc_python)"
+    # Run from repo root with a relative script path so Git Bash + Windows python agree on paths.
+    (cd "$PROJECT_ROOT" && "$PYTHON" tests/generate_golden_output.py setup-tests)
     echo -e "${COLOR_YELLOW}--- Generation complete ---${COLOR_NC}"
 }
 
@@ -197,14 +190,16 @@ main() {
     create_basic_project
     create_strip_comments_project
     create_nested_ignore_project
+    create_special_chars_project
     # Add calls here for future test projects
     # create_headers_only_project
 
-    # Check for --golden-files argument
-    if [[ "$1" == "--golden-files" ]]; then
+    # Regenerate golden files when requested or when basic_project golden is missing
+    local basic_golden="$TEST_PROJECTS_ROOT/basic_project/expected_output.txt"
+    if [[ "$1" == "--golden-files" ]] || [[ ! -f "$basic_golden" ]]; then
         generate_golden_files
     else
-        echo -e "\n${COLOR_YELLOW}To generate/update 'expected_output.txt' files, run: ./setup_tests.sh --golden-files${COLOR_NC}"
+        echo -e "\n${COLOR_YELLOW}To regenerate 'expected_output.txt' files, run: ./setup_tests.sh --golden-files${COLOR_NC}"
     fi
 
     echo -e "\n${COLOR_GREEN}✅ Test environment ready!${COLOR_NC}"
