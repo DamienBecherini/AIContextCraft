@@ -18,9 +18,9 @@ TREE_STATS_PROJECT = TESTS_DIR / 'test_projects' / 'tree_stats_project'
 
 
 def _specs_for_tree_stats():
-    include = pathspec.PathSpec.from_lines('gitwildmatch', ['**/*'])
+    include = pathspec.PathSpec.from_lines('gitignore', ['**/*'])
     common = ['.git/', 'build/', 'expected_output.txt', '*.log']
-    tree_exclude = pathspec.PathSpec.from_lines('gitwildmatch', common)
+    tree_exclude = pathspec.PathSpec.from_lines('gitignore', common)
     return include, tree_exclude
 
 

@@ -34,11 +34,11 @@ class FilterManager:
         self.project_filters = final_project_filters
         self.tree_filters = final_tree_filters
 
-        self._include_spec = pathspec.PathSpec.from_lines("gitwildmatch", include_patterns)
+        self._include_spec = pathspec.PathSpec.from_lines("gitignore", include_patterns)
         self._project_exclude_spec = pathspec.PathSpec.from_lines(
-            "gitwildmatch", final_project_filters
+            "gitignore", final_project_filters
         )
-        self._tree_exclude_spec = pathspec.PathSpec.from_lines("gitwildmatch", final_tree_filters)
+        self._tree_exclude_spec = pathspec.PathSpec.from_lines("gitignore", final_tree_filters)
 
     @staticmethod
     def _normalize_relative_path(relative_path: str, is_dir: bool = False) -> str:

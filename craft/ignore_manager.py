@@ -49,7 +49,7 @@ class IgnoreManager:
         self.disabled = disabled
         self.disabled_ignore_types = set(disabled_ignore_types or set())
         self.encoding = encoding
-        self.security_spec = pathspec.PathSpec.from_lines("gitwildmatch", SECURITY_PATTERNS)
+        self.security_spec = pathspec.PathSpec.from_lines("gitignore", SECURITY_PATTERNS)
         self._spec_cache: dict[Path, list[pathspec.PathSpec]] = {}
         self._detected_ignore_files: set[Path] = set()
         self._used_ignore_files: set[Path] = set()
@@ -113,7 +113,7 @@ class IgnoreManager:
                 continue
 
             try:
-                spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+                spec = pathspec.PathSpec.from_lines("gitignore", patterns)
             except Exception as exc:  # pragma: no cover - extra safeguard
                 self._invalid_ignore_files.add(ignore_path)
                 logging.warning("Unable to parse ignore file '%s': %s", ignore_path, exc)
