@@ -88,7 +88,7 @@ Add a multi-format rendering engine for concatenation output in AIContextCraft, 
 ### 7) Plan publication (requested)
 - Determine current branch name.
 - Copy validated plan into `docs/plans/`.
-- Rename to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md`.
+- Rename to `YYYY_MM_DD_HH-MM_<branch-slug>_<plan-title>.plan.md`.
 - Normalize `<plan-title>` to ASCII kebab-case.
 
 ## Acceptance criteria
@@ -119,7 +119,7 @@ Add a multi-format rendering engine for concatenation output in AIContextCraft, 
 - `config.yaml`
 - `craft/formatter.py` (new)
 - `tests/test_aicc.py`
-- `docs/plans/2026_05_17_17:29_feature__llm-formats_llm-output-formats.plan.md` (report appended)
+- `docs/plans/2026_05_17_17-29_feature__llm-formats_llm-output-formats.plan.md` (report appended)
 
 ### Validation / tests
 - Environment used: `.aicc_venv` (project local Python).

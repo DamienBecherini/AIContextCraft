@@ -77,7 +77,7 @@ Establish a maintainable, professional architecture documentation base with diag
 
 7. **Plan publication (requested)**
    - Copy validated plan to `docs/plans/`.
-   - Rename to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` (ASCII kebab-case title).
+   - Rename to `YYYY_MM_DD_HH-MM_<branch-slug>_<plan-title>.plan.md` (ASCII kebab-case title).
 
 ## Implementation flow (quick view)
 ```mermaid
@@ -112,7 +112,7 @@ flowchart TD
   - `render-diagram-assets.sh`
   - `generate-all.sh`
 - Root `README.md` updated with architecture section and single generation command.
-- Plan published at `docs/plans/2026_05_17_22:18_feature__docs-c4-ai-context-craft_documentation-c4-aicontextcraft.plan.md`.
+- Plan published at `docs/plans/2026_05_17_22-18_feature__docs-c4-ai-context-craft_documentation-c4-aicontextcraft.plan.md`.
 
 ### Validation / tests
 - `./scripts/architecture/generate-all.sh` executed.

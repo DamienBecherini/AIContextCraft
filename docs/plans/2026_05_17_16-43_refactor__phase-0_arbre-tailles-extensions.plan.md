@@ -194,7 +194,7 @@ Post-implementation validation (project rule):
 
 On execution, after plan validation:
 
-- Copy the validated plan to `docs/plans/` as `YYYY_MM_DD_HH:MM_refactor__phase-0_arbre-tailles-extensions.plan.md` (timestamp at copy time, kebab-case title).
+- Copy the validated plan to `docs/plans/` as `YYYY_MM_DD_HH-MM_refactor__phase-0_arbre-tailles-extensions.plan.md` (timestamp at copy time, kebab-case title).
 
 ## Main impacted files
 
@@ -242,7 +242,7 @@ Extensions (concatenated files):
 | `tests/test_aicc.py` | Modified |
 | `tests/test_projects/basic_project/expected_output.txt` | Updated |
 | `README.md` | Updated |
-| `docs/plans/2026_05_17_16:43_refactor__phase-0_arbre-tailles-extensions.plan.md` | Plan published |
+| `docs/plans/2026_05_17_16-43_refactor__phase-0_arbre-tailles-extensions.plan.md` | Plan published |
 
 ### Validation
 

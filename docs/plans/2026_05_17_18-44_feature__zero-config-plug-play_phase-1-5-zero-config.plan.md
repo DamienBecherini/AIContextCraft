@@ -90,7 +90,7 @@ Deliver a frictionless default experience: run without mandatory config file, `x
 8. **Plan publication (requested)**
 
 - Copy validated plan to `docs/plans/`.
-- Rename to `YYYY_MM_DD_HH:MM_feature__zero-config-plug-play_phase-1-5-zero-config.plan.md` (ASCII kebab-case title).
+- Rename to `YYYY_MM_DD_HH-MM_feature__zero-config-plug-play_phase-1-5-zero-config.plan.md` (ASCII kebab-case title).
 
 ## Targeted risks
 

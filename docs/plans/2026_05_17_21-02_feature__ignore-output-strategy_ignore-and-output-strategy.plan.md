@@ -109,7 +109,7 @@ Make ignore option behavior explicit and consistent (`--no-ignore` global + sele
 
 ## Plan publication (requested)
 - Copy this validated plan into `docs/plans/`.
-- Rename copy to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` with ASCII kebab-case title.
+- Rename copy to `YYYY_MM_DD_HH-MM_<branch-slug>_<plan-title>.plan.md` with ASCII kebab-case title.
 
 ---
 ## Implementation report

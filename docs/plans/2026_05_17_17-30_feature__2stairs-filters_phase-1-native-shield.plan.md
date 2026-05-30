@@ -18,7 +18,7 @@ todos:
     content: "README: default filtering, --no-ignore, remove --use-gitignore"
     status: completed
   - id: save-plan-file
-    content: Save plan to docs/plans/2026_05_17_17:30_feature__2stairs-filters_phase-1-native-shield.plan.md
+    content: Save plan to docs/plans/2026_05_17_17-30_feature__2stairs-filters_phase-1-native-shield.plan.md
     status: completed
   - id: run-pytest
     content: Run pytest (16 tests) and document result

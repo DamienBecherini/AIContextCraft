@@ -93,7 +93,7 @@ Implement an alternate `--git-diff <REF_A> <REF_B>` mode that produces a Markdow
 ## Plan publication (requested)
 - After plan validation, add an execution step that:
   - copies the validated plan file into `docs/plans/`,
-  - renames the copy to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` with ASCII kebab-case title.
+  - renames the copy to `YYYY_MM_DD_HH-MM_<branch-slug>_<plan-title>.plan.md` with ASCII kebab-case title.
 
 ---
 ## Implementation report

@@ -3,7 +3,7 @@ name: phase-1-ux-clipboard
 overview: Implement Phase 1 final UX with Rich (console + progress) and robust clipboard copy in headless environments, without polluting log files.
 todos:
   - id: branch-and-plan-file
-    content: Create feature/ux-clipboard-rich and save plan to docs/plans/2026_05_17_17:40_feature__ux-clipboard-rich_phase-1-ux-clipboard.plan.md.
+    content: Create feature/ux-clipboard-rich and save plan to docs/plans/2026_05_17_17-40_feature__ux-clipboard-rich_phase-1-ux-clipboard.plan.md.
     status: in_progress
   - id: deps-update
     content: Add rich and pyperclip to requirements.txt.
@@ -27,7 +27,7 @@ todos:
     content: Present report, ask whether to save to plan, then propose conventional commit message.
     status: pending
   - id: publish-plan-copy
-    content: Copy validated plan to docs/plans/ with timestamped name YYYY_MM_DD_HH:MM_<plan-title>.plan.md.
+    content: Copy validated plan to docs/plans/ with timestamped name YYYY_MM_DD_HH-MM_<plan-title>.plan.md.
     status: pending
 isProject: false
 ---
@@ -46,11 +46,11 @@ Add a smoother CLI experience with:
 - [craft/utils.py](/opt/AIContextCraft/craft/utils.py)
 - [main.py](/opt/AIContextCraft/main.py)
 - [tests/test_aicc.py](/opt/AIContextCraft/tests/test_aicc.py)
-- [docs/plans/2026_05_17_17:40_feature__ux-clipboard-rich_phase-1-ux-clipboard.plan.md](/opt/AIContextCraft/docs/plans/2026_05_17_17:40_feature__ux-clipboard-rich_phase-1-ux-clipboard.plan.md)
+- [docs/plans/2026_05_17_17-40_feature__ux-clipboard-rich_phase-1-ux-clipboard.plan.md](/opt/AIContextCraft/docs/plans/2026_05_17_17-40_feature__ux-clipboard-rich_phase-1-ux-clipboard.plan.md)
 
 ## Execution steps
 1. Create branch `feature/ux-clipboard-rich`.
-2. Save this plan to `docs/plans/2026_05_17_17:40_feature__ux-clipboard-rich_phase-1-ux-clipboard.plan.md`.
+2. Save this plan to `docs/plans/2026_05_17_17-40_feature__ux-clipboard-rich_phase-1-ux-clipboard.plan.md`.
 3. Add `rich` and `pyperclip` to `requirements.txt`.
 4. Modernize `setup_logging` in `craft/utils.py`:
    - console with `rich.logging.RichHandler` (time/path hidden),
@@ -71,7 +71,7 @@ Add a smoother CLI experience with:
    - report collected count, pass/fail, warnings.
 9. Produce implementation report (changes, modified files, validation), then explicitly ask whether it should be saved to the plan.
 10. After answer on report save, propose a Conventional Commits message including plan file reference.
-11. Publish a copy of the validated plan in `docs/plans/` renamed to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` (ASCII kebab-case title).
+11. Publish a copy of the validated plan in `docs/plans/` renamed to `YYYY_MM_DD_HH-MM_<branch-slug>_<plan-title>.plan.md` (ASCII kebab-case title).
 
 ## Validation criteria
 - `--clipboard` works when OS clipboard is available.
@@ -85,7 +85,7 @@ Add a smoother CLI experience with:
 ## Implementation report
 
 - Branch created: `feature/ux-clipboard-rich`.
-- Plan saved: `docs/plans/2026_05_17_17:40_feature__ux-clipboard-rich_phase-1-ux-clipboard.plan.md`.
+- Plan saved: `docs/plans/2026_05_17_17-40_feature__ux-clipboard-rich_phase-1-ux-clipboard.plan.md`.
 - Dependencies added in `requirements.txt`: `rich`, `pyperclip`.
 - Logging modernized in `craft/utils.py`:
   - console via `RichHandler` (`show_time=False`, `show_path=False`),

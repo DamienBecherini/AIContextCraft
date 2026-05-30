@@ -144,7 +144,7 @@ Report: tests collected, pass/fail, warnings if any.
 After user validates the plan:
 
 - Copy validated plan to `docs/plans/`
-- Rename to `YYYY_MM_DD_HH:MM_feature__docs-c4-ai-context-craft_hotfix-stdout-stderr.plan.md` (ASCII kebab-case title)
+- Rename to `YYYY_MM_DD_HH-MM_feature__docs-c4-ai-context-craft_hotfix-stdout-stderr.plan.md` (ASCII kebab-case title)
 
 ## Out of scope (intentional)
 
@@ -191,4 +191,4 @@ Warnings: `DeprecationWarning` pathspec `GitWildMatchPattern` (pre-existing, 16 
 - `craft/context_builder.py`
 - `tests/test_context_builder.py`
 - `tests/test_aicc.py`
-- `docs/plans/2026_05_17_22:51_feature__docs-c4-ai-context-craft_hotfix-stdout-stderr.plan.md` (timestamped plan copy)
+- `docs/plans/2026_05_17_22-51_feature__docs-c4-ai-context-craft_hotfix-stdout-stderr.plan.md` (timestamped plan copy)

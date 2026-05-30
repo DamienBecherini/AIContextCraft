@@ -56,7 +56,7 @@ The existing rule is preserved and extended in [`/opt/AIContextCraft/.cursor/rul
 ## Plan publication (requested)
 
 - Copy the validated plan into `docs/plans/`.
-- Rename to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` with ASCII kebab-case title.
+- Rename to `YYYY_MM_DD_HH-MM_<branch-slug>_<plan-title>.plan.md` with ASCII kebab-case title.
 
 ---
 ## Implementation report
@@ -70,7 +70,7 @@ The existing rule is preserved and extended in [`/opt/AIContextCraft/.cursor/rul
 ### Modified files
 
 - `/opt/AIContextCraft/.cursor/rules/plan-publication-policy.mdc`
-- `/opt/AIContextCraft/docs/plans/2026_05_17_17:43_main_maj-consigne-plan-externe.plan.md`
+- `/opt/AIContextCraft/docs/plans/2026_05_17_17-43_main_maj-consigne-plan-externe.plan.md`
 
 ### Validation
 

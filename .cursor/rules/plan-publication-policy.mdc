@@ -9,13 +9,14 @@ Scope note: this rule applies only when the active workspace is `AIContextCraft`
 
 Before generating any implementation plan, ask the user this explicit question:
 
-"Do you want me to add a step that copies the generated plan into `docs/plans/` and renames it to `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md` (example: `2026_05_16_11:30_feature__smtp-relay_smtp-flux-separes.plan.md`)?"
+"Do you want me to add a step that copies the generated plan into `docs/plans/` and renames it to `YYYY_MM_DD_HH-MM_<branch-slug>_<plan-title>.plan.md` (example: `2026_05_16_11-30_feature__smtp-relay_smtp-flux-separes.plan.md`)?"
 
 If the user answers yes:
 
 - Add that step directly into the plan content.
 - During execution, copy the validated plan file into `docs/plans/`.
-- Rename the copied file using the format `YYYY_MM_DD_HH:MM_<branch-slug>_<plan-title>.plan.md`.
+- Rename the copied file using the format `YYYY_MM_DD_HH-MM_<branch-slug>_<plan-title>.plan.md`.
+- Use a hyphen between hour and minute (`HH-MM`), never a colon (`:`): colons are invalid in Windows filenames.
 - Build `<branch-slug>` from the current branch name by replacing `/` with `__` (filesystem-safe).
 - Normalize `<plan-title>` to lowercase kebab-case (ASCII only) after the branch slug.
 
