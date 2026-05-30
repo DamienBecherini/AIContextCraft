@@ -365,15 +365,57 @@ High-level direction (details and ideas in [ROADMAP.md](ROADMAP.md)):
 
 ## 🛠️ Development
 
-From the repository root, using the project virtual environment:
+### Test fixtures
+
+Some integration tests rely on files that are **not** committed (for example `.env.local`, `*.log`, `node_modules/`, or `context.txt` blocked by the project `.gitignore`). Before running pytest, prepare fixtures from the repository root:
 
 ```bash
-# Full suite (~36 tests)
-.aicc_venv/bin/python -m pytest tests
+bash tests/setup_tests.sh
+```
 
-# Targeted run
+This script recreates test projects, adds gitignored fixture files, and generates `expected_output.txt` golden files when they are missing. Use `--golden-files` to force regeneration of golden files.
+
+On **Windows**, run the script via **Git Bash** (`bash tests/setup_tests.sh`). Do not double-click or invoke `.\tests\setup_tests.sh` from PowerShell — Windows will not execute it as a shell script.
+
+### Running tests
+
+**Linux / macOS**
+
+```bash
+python -m venv .aicc_venv
+source .aicc_venv/bin/activate
+pip install -r requirements.txt
+bash tests/setup_tests.sh
+.aicc_venv/bin/python -m pytest tests
+```
+
+**Windows (PowerShell + Git Bash)**
+
+```powershell
+python -m venv .aicc_venv
+.\.aicc_venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+```bash
+# Git Bash
+bash tests/setup_tests.sh
+```
+
+```powershell
+# PowerShell
+.\.aicc_venv\Scripts\python.exe -m pytest tests
+```
+
+Targeted run:
+
+```bash
 .aicc_venv/bin/python -m pytest tests/test_context_builder.py
 ```
+
+### Line endings
+
+Shell scripts (`.sh`) and test golden files (`expected_output.txt`) are normalized to **LF** via `.gitattributes`, so `bash tests/setup_tests.sh` works the same after a clone on Linux or Windows. Other text files follow your Git `core.autocrlf` settings; the setup script recreates test fixture sources when needed.
 
 ## 🤝 Contributing
 

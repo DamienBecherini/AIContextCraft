@@ -1,2 +1,5 @@
 # Bash scripts require LF line endings (CRLF breaks Git Bash on Windows).
 *.sh text eol=lf
+
+# Golden test outputs are compared byte-for-byte; keep LF on all platforms.
+tests/test_projects/**/expected_output.txt text eol=lf
