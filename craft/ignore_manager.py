@@ -69,9 +69,19 @@ class IgnoreManager:
     def resolve_ignore_type(cls, filename: str) -> str | None:
         return cls.FILENAME_TO_IGNORE_TYPE.get(filename)
 
+    def _is_under_project_root(self, path: Path) -> bool:
+        try:
+            path.resolve().relative_to(self.project_root)
+            return True
+        except ValueError:
+            return False
+
     def _relative_posix(self, path: Path) -> str:
         resolved = path.resolve()
-        rel = resolved.relative_to(self.project_root)
+        try:
+            rel = resolved.relative_to(self.project_root)
+        except ValueError:
+            rel = path.absolute().relative_to(self.project_root)
         return str(rel).replace("\\", "/")
 
     def _matches_spec(self, spec: pathspec.PathSpec, rel_from_dir: str, is_dir: bool) -> bool:
@@ -143,6 +153,8 @@ class IgnoreManager:
             yield directory
 
     def is_ignored(self, path: Path) -> bool:
+        if not self._is_under_project_root(path):
+            return True
         rel = self._relative_posix(path)
         is_dir = path.is_dir() or rel.endswith("/")
 
