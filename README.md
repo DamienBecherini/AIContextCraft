@@ -6,7 +6,7 @@
   
   <p>
     <a href="https://github.com/DamienBecherini/AIContextCraft"><img src="https://img.shields.io/badge/GitHub-AIContextCraft-181717?logo=github" alt="GitHub"></a>
-    <a href="https://creativecommons.org/publicdomain/zero/1.0/"><img src="https://img.shields.io/badge/license-CC0_1.0-blue.svg" alt="License"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
     <a href="#"><img src="https://img.shields.io/badge/python-3.8+-green.svg" alt="Python Version"></a>
     <a href="#"><img src="https://img.shields.io/badge/status-active-brightgreen" alt="Status"></a>
   </p>
@@ -203,7 +203,7 @@ Project tree: /opt/AIContextCraft
 ├── .cursor/
 │   └── rules/
 ├── ● .gitignore — 7.95 KB
-├── ● LICENSE — 6.45 KB
+├── ● LICENSE — 1.06 KB
 ├── ● README.md — 14.79 KB
 ├── ● ROADMAP.md — 3.47 KB
 ├── ● aicc.py — 120 B
@@ -429,4 +429,4 @@ Contributions are welcome! Whether it's a feature request, bug report, or a pull
 
 ## 📜 License
 
-This project is released into the public domain under the [CC0 1.0 Universal](LICENSE) license. Feel free to use, modify, and distribute it as you see fit.
+This project is licensed under the [MIT License](LICENSE).
